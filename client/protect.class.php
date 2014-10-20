@@ -1178,7 +1178,6 @@ $protect->secret_key = 'fdfblhlLgnJDKJklblngkkkrtkghm565678kl78klkUUHtvdfdoghphj
  */
 $protect->validate();
 
-
 // если нет ошибок, то лицензия в боевом состоянии
 if(!$protect->errors)
 {
