@@ -1,0 +1,1195 @@
+<?php
+/***********************************************************************
+ * Protect - система лицензирования для PHP скриптов на серверной основе
+ ***********************************************************************
+ * @author       Oleg Budrin <support@regger.pw>
+ * @copyright    Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ **********************************************************************/
+
+class protect
+{
+	/*
+	 * Ошибки, возникшие при валидации
+	 * @bool
+	 */
+	public $errors = false;
+	
+	/*
+	 * Массив с информацией о лицензии
+	 * @array
+	 */
+	public $license_info = array();
+	
+	/*
+	 * Лицензионный ключ активации
+	 * @string
+	 */
+	public $license_key = '';
+	
+	/*
+	 * Полный адрес сервера, для проверки лицензии и выпуска новой.
+	 * @string
+	 */
+	public $api_server = '';
+	
+	/*
+	 * Удаленный порт сервера лицензий
+	 * @integer
+	 */
+	public $remote_port = 80;
+	
+	/*
+	 * Период ожидания ответа от сервера лицензий
+	 * @integer
+	 */
+	public $remote_timeout = 10;
+	
+	/*
+	 * Маркер режима хранения ключа
+	 * database - хранить в базе
+	 * filesystem - хранить в файле
+	 */
+	public $local_key_storage = 'filesystem';
+	
+	/*
+	 * ----------
+	 */
+	public $read_query = false;
+	
+	/*
+	 * ----------
+	 */
+	public $update_query = false;
+	
+	/*
+	 * Полный путь до локального файла с временной лицензией
+	 * @string
+	 */
+	public $local_key_path = './';
+	
+	/*
+	 * Название файла с временной лицензией
+	 * @string
+	 */
+	public $local_key_name = 'license.lic';
+	
+	/*
+	 * Сортировка методов запроса к серверу лицензий.
+	 *
+	 * Доступны:
+	 * s - на сокетах
+	 * c - на cURL
+	 * f - на file_get_contents
+	 *
+	 * @string
+	 */
+	public $local_key_transport_order = 'scf';
+	
+	/*
+	 * Период после истечения врмени действия локального ключа, после которого лицензия активна.
+	 * нужно для не отключения скрипта, если сервер лицензий временно не доступен.
+	 *
+	 * @integer
+	 */
+	public $local_key_grace_period = 4;
+	
+	/*
+	 *
+	 *
+	 * @integer
+	 */
+	public $local_key_last = 0;
+	
+	/*
+	 * Период, в течении которого доступно скачивание.
+	 */
+	public $validate_download_access = false;
+	
+	/*
+	 * дата релиза продукта.
+	 */
+	public $release_date = false;
+	
+	/*
+	 * Локальный ключ для обработки
+	 *
+	 * @array
+	 */
+	public $key_data;
+	
+	/*
+	 * Локализация статусов лицензии и других сообщений
+	 *
+	 * @array
+	 */
+	public $status_messages;
+	
+	/*
+	 *
+	 */
+	public $valid_for_product_tiers = false;
+
+	/*
+	 *
+	 */
+	private  $trigger_grace_period;
+
+
+	/*
+	 * Конструктор класса
+	 */
+	public function __construct()
+	{
+		$this->valid_local_key_types = array('protect');
+		$this->local_key_type = 'protect';
+		
+		$this->key_data = array(
+						'custom_fields' => array(),
+						'download_access_expires' => 0, 
+						'license_expires' => 0, 
+						'local_key_expires' => 0, 
+						'status' => 'Invalid', 
+						);
+						
+		$this->status_messages = array(
+						'active' => 'This license is active.', 
+						'suspended' => 'Error: This license has been suspended.', 
+						'expired' => 'Error: This license has expired.', 
+						'pending' => 'Error: This license is pending review.', 
+						'download_access_expired' => 'Error: This version of the software was released '.
+													 'after your download access expired. Please '.
+													 'downgrade or contact support for more information.', 
+						'missing_license_key' => 'Error: The license key variable is empty.',
+						'unknown_local_key_type' => 'Error: An unknown type of local key validation was requested.',
+						'could_not_obtain_local_key' => 'Error: I could not obtain a new local license key.', 
+						'maximum_grace_period_expired' => 'Error: The maximum local license key grace period has expired.',
+						'local_key_tampering' => 'Error: The local license key has been tampered with or is invalid.',
+						'local_key_invalid_for_location' => 'Error: The local license key is invalid for this location.',
+						'missing_license_file' => 'Error: Please create the following file (and directories if they dont exist already): ',
+						'license_file_not_writable' => 'Error: Please make the following path writable: ',
+						'invalid_local_key_storage' => 'Error: I could not determine the local key storage on clear.',
+						'could_not_save_local_key' => 'Error: I could not save the local license key.',
+						'license_key_string_mismatch' => 'Error: The local key is invalid for this license.',
+						'localhost' => 'localhost',
+		);
+		
+	}
+	
+	/*
+	* Валидация
+	* 
+	* @return string
+	*/
+	public function validate()
+	{
+		/*
+		 * Если ключ активации пустой, то выдаем ошибку
+		 */
+		if (!$this->license_key) 
+		{
+			return $this->errors = $this->status_messages['missing_license_key']; 
+		}
+		
+		/*
+		 * Если нет действующего типа локального ключа
+		 */
+		if (!in_array(strtolower($this->local_key_type), $this->valid_local_key_types)) 
+		{ 
+			return $this->errors = $this->status_messages['unknown_local_key_type'];
+		}
+
+		/*
+		 * Если локальный компьютер и Windows
+		 */
+		if($this->get_local_ip() && $this->is_windows())
+		{
+			return $this->errors = $this->status_messages['localhost'];
+		}
+		
+		/*
+		 * Получаем локальный ключ из локального хранилища
+		 */
+		switch($this->local_key_storage)
+		{
+			/*
+			 * Получаем из базы данных
+			 */
+			case 'database':
+				$local_key = $this->db_read_local_key();
+				break;
+			/*
+			 * Получаем из файла
+			 */
+			case 'filesystem':
+				$local_key = $this->read_local_key();
+				break;
+			/*
+			 * Поо умолчанию выдаем ошибку
+			 */
+			default:
+				return $this->errors = $this->status_messages['missing_license_key'];
+		}
+		
+		/*
+		 * присваиваем сообщение об ошибке, если не удалось получить новый локальный ключ с сервера для сравнения.
+		 */
+		$this->trigger_grace_period = $this->status_messages['could_not_obtain_local_key'];
+		
+		/*
+		 * Срок действия локального ключа истек и не возможно получить новый локальный ключ,
+		 * но есть период когда он дополнительно действует.
+		 */
+		if ( $this->errors == $this->trigger_grace_period && $this->local_key_grace_period )
+		{
+			/*
+			 * Получаем льготный период
+			 */
+			$grace = $this->process_grace_period($this->local_key_last); 
+			if ($grace['write'])
+			{
+				/*
+				 * Если есть льготный период, то записываем новый ключ
+				 */
+				if ($this->local_key_storage == 'database')
+				{
+					$this->db_write_local_key($grace['local_key']);
+				}
+				elseif ($this->local_key_storage == 'filesystem')
+				{
+					$this->write_local_key($grace['local_key'], "{$this->local_key_path}{$this->local_key_name}");
+				}
+			}
+			
+			/*
+			 * Если все льготные периоды использованы
+			 */
+			if ($grace['errors'])
+			{
+				return $this->errors = $grace['errors'];
+			}
+			
+			/*
+			 * Если льготные периоды не использованы
+			 */
+			$this->errors = false;
+
+			return $this;
+		}
+		
+		/*
+		 * Проверяем, нет ли ошибок, если есть то возвращаем.
+		 */
+		if ($this->errors)
+		{
+			return $this->errors;
+		}
+		
+		/*
+		 * Проверяем локальный ключ
+		 */
+		return $this->validate_local_key($local_key);
+	}
+	
+	/*
+	* Расчитываем максимальное время действия льготного периода
+	* 
+	* @param integer $local_key_expires 
+	* @param integer $grace 
+	* @return integer
+	*/
+	private function calc_max_grace($local_key_expires, $grace)
+	{
+		return ( (integer)$local_key_expires + ( (integer)$grace * 86400 ) );
+	}
+	
+	/*
+	* Обработка льготного периода для локального ключа
+	* 
+	* @param string $local_key 
+	* @return string
+	*/
+	private function process_grace_period($local_key)
+	{
+		/*
+		 * Получаем дату истечения локального ключа
+		 */
+		$local_key_src = $this->decode_key($local_key); 
+		$parts = $this->split_key($local_key_src);
+		$key_data = unserialize($parts[0]);
+		$local_key_expires = (integer)$key_data['local_key_expires'];
+		unset($parts, $key_data);
+		
+		/*
+		 * Правила льготного периода
+		 */
+		$write_new_key = false;
+		$parts = explode("\n\n", $local_key); $local_key = $parts[0];
+		foreach ( $local_key_grace_period=explode(',', $this->local_key_grace_period) as $key => $grace )
+		{
+			// добавляем разделитель
+			if (!$key) { $local_key.="\n"; }
+			
+			// считаем льготные период
+			if ($this->calc_max_grace($local_key_expires, $grace) > time() ) { continue; }
+			
+			// log the new attempt, we'll try again next time
+			$local_key.="\n{$grace}";
+			
+			$write_new_key = true;
+		}
+		
+		/*
+		 * Проверяем максимальный лимит льготного периода
+		 */
+		if ( time() > $this->calc_max_grace( $local_key_expires, array_pop($local_key_grace_period) ) )
+		{
+			return array('write' => false, 'local_key' => '', 'errors' => $this->status_messages['maximum_grace_period_expired']);
+		}
+		
+		return array('write' => $write_new_key, 'local_key' => $local_key, 'errors' => false);
+	}
+	
+	/*
+	* Проверка на принадлежность к льготному периоду
+	* 
+	* @param string $local_key 
+	* @param integer $local_key_expires 
+	* @return integer
+	*/
+	private function in_grace_period($local_key, $local_key_expires)
+	{
+		$grace = $this->split_key($local_key, "\n\n"); 
+		if (!isset($grace[1])) { return -1; }
+		
+		return (integer)( $this->calc_max_grace( $local_key_expires, array_pop( explode( "\n", $grace[1] ) ) )-time() );
+	}
+	
+	/*
+	* Декодируем локальный ключ.
+	* 
+	* @param string $local_key 
+	* @return string
+	*/
+	private function decode_key($local_key)
+	{
+		return base64_decode(str_replace("\n", '', urldecode($local_key)));
+	}
+	
+	/*
+	* Разбиваем локальный ключ на части
+	* 
+	* @param string $local_key 
+	* @param string $token		{protect} or \n\n
+	* @return string
+	*/
+	private function split_key($local_key, $token = '{protect}')
+	{
+		return explode($token, $local_key);
+	}
+	
+	/*
+	* Проверяем дейтвия ключа по параметрам доступа
+	* 
+	* @param string $key
+	* @param array $valid_accesses
+	* @return array
+	*/ 
+	private function validate_access($key, $valid_accesses)
+	{
+		return in_array($key, (array)$valid_accesses);
+	}
+	
+	/*
+	* Получаем массив возможных IP адресов
+	* 
+	* @param string $key
+	* @param array $valid_accesses
+	* @return array
+	*/ 
+	private function wildcard_ip($key)
+	{
+		$octets = explode('.', $key);
+		
+		array_pop($octets);
+		$ip_range[] = implode('.', $octets).'.*';
+		
+		array_pop($octets);
+		$ip_range[] = implode('.', $octets).'.*';
+		
+		array_pop($octets);
+		$ip_range[] = implode('.', $octets).'.*';
+		
+		return $ip_range;
+	}
+	
+	/*
+	* Получаем доменное имя с учетом wildcard
+	* 
+	* @param string $key
+	* @param array $valid_accesses
+	* @return array
+	*/ 
+	private function wildcard_domain($key)
+	{
+		return '*.' . str_replace('www.', '', $key);
+	}
+	
+	/*
+	* Получаем server hostname с учетом wildcard
+	* 
+	* @param string $key
+	* @param array $valid_accesses
+	* @return array
+	*/ 
+	private function wildcard_server_hostname($key)
+	{
+		$hostname = explode('.', $key);
+		unset($hostname[0]);
+		
+		$hostname = (!isset($hostname[1])) ? array($key) : $hostname;
+		
+		return '*.' . implode('.', $hostname);
+	}
+	
+	/*
+	* Получаем определенный набор деталей доступа из экземпляра
+	* 
+	* @param array $instances
+	* @param string $enforce
+	* @return array
+	*/ 
+	private function extract_access_set($instances, $enforce)
+	{
+		foreach ($instances as $key => $instance)
+		{
+			if ($key != $enforce)
+			{
+				continue;
+			}
+			return $instance;
+		}
+		
+		return array();
+	}
+	
+	/*
+	* Валидация локального лицензионного ключа
+	* 
+	* @param string $local_key 
+	* @return string
+	*/
+	private function validate_local_key($local_key)
+	{
+		/*
+		 * Преобразовываем лицензию в удобную форму
+		 */
+		$local_key_src = $this->decode_key($local_key); 
+		
+		/*
+		 * Разделяем на партии
+		 */
+		$parts = $this->split_key($local_key_src);
+		
+		/*
+		 * Проверяем на наличие всех частей, если нет, то мы не можем проверять дальше.
+		 */
+		if (!isset($parts[1]))
+		{
+			return $this->errors = $this->status_messages['local_key_tampering'];
+		}
+		
+		/*
+		 * Проверяем секретный ключ на подделку. Если не совпадают, то возвратим ошибку.
+		 */
+		if ( md5((string)$this->secret_key . (string)$parts[0]) != $parts[1] )
+		{
+			return $this->errors = $this->status_messages['local_key_tampering'];
+		}
+		unset($this->secret_key);
+		
+		/*
+		 * Преобразовываем данные локального ключа в удобную форму
+		 */
+		$key_data = unserialize($parts[0]);
+		$instance = $key_data['instance']; unset($key_data['instance']);
+		$enforce = $key_data['enforce']; unset($key_data['enforce']);
+		$this->key_data = $key_data;
+		
+		/*
+		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
+		 */
+		if ( (string)$key_data['license_key_string'] != (string)$this->license_key )
+		{
+			return $this->errors=$this->status_messages['license_key_string_mismatch'];
+		}
+		
+		/*
+		 * проверяем статус лицензии, если она не активна, то возвращаем ошибку
+		 */
+		if ( (string)$key_data['status'] != 'active' )
+		{
+			return $this->errors = $this->status_messages[$key_data['status']];
+		}
+		
+		/*
+		 * Проверяем срок окончания лицензии, если срок истек, то возвращаем сообщение об ошибке
+		 */
+		if ((string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time())
+		{
+			return $this->errors = $this->status_messages['expired'];
+		}
+		
+		/*
+		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся скачать новый
+		 */
+		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		{
+			if ($this->in_grace_period($local_key, $key_data['local_key_expires']) < 0)
+			{
+				/*
+				 * Если срок истек, удаляем не действительный локальный ключ
+				 */
+				$this->clear_cache_local_key(true);
+
+				/*
+				 * запускаем получение нового ключа.
+				 */
+				return $this->validate();
+			}
+		}
+		
+		/*
+		 *  Проверяем срок истечения обновлений (на будущее), пока не затрагиваем
+		 */
+		if ($this->validate_download_access && strtolower($key_data['download_access_expires']) != 'never' && (integer)$key_data['download_access_expires'] < strtotime($this->release_date))
+		{
+			return $this->errors = $this->status_messages['download_access_expired'];
+		}
+		
+		/*
+		 * Проверяем права на доступ:
+		 *
+		 * - Запуск скрипта для текущего расположения.
+		 * - Проверяем домен. Домен проверяется сразу на поддомены, если адрес домена с www.
+		 * - Проверяем IP адрес сервера.
+		 * - Проверяем имя сервера.
+		 *
+		 */
+		$conflicts = array();
+		$access_details = $this->access_details();
+
+		foreach ((array)$enforce as $key)
+		{
+			$valid_accesses = $this->extract_access_set($instance, $key);
+			if (!$this->validate_access($access_details[$key], $valid_accesses))
+			{
+				$conflicts[$key] = true; 
+				
+				if (in_array($key, array('ip', 'server_ip')))
+				{
+					foreach ($this->wildcard_ip($access_details[$key]) as $ip) 
+					{
+						if ($this->validate_access($ip, $valid_accesses))
+						{
+							unset($conflicts[$key]);
+							break;
+						}
+					}
+				}
+				elseif (in_array($key, array('domain')))
+				{
+					if ($this->validate_access($this->wildcard_domain($access_details[$key]), $valid_accesses))
+					{
+						unset($conflicts[$key]);
+					}
+				}
+				elseif (in_array($key, array('server_hostname')))
+					{
+					if ($this->validate_access($this->wildcard_server_hostname($access_details[$key]), $valid_accesses))
+						{
+						unset($conflicts[$key]);
+						}
+					}
+				}
+		}
+		
+		/*
+		 * Если конфликты для локального ключа остались, то выдаем ошибку.
+		 * Скрпт не имеет права выполняться в данном расположении по указанной лицензии.
+		 */
+		if (!empty($conflicts))
+		{
+			return $this->errors = $this->status_messages['local_key_invalid_for_location'];
+		}
+	}
+	
+	/*
+	* Читаем локальный ключ из базы данных
+	* 
+	* @return string
+	*/
+
+	public function db_read_local_key()
+	{
+		$query = @mysql_query($this->read_query);
+		if ($mysql_error=mysql_error()) { return $this -> errors="Error: {$mysql_error}"; }
+		
+		$result = @mysql_fetch_assoc($query);
+		if ($mysql_error=mysql_error()) { return $this -> errors="Error: {$mysql_error}"; }
+		
+		// если локальный ключ пустой
+		if (!$result['local_key'])
+		{ 
+			// Получаем новый локальный ключ
+			$result['local_key'] = $this->fetch_new_local_key();
+			
+			// Все ли в порядке? Проверяем ошибки получения ключа, если есть то возвращаем.
+			if ($this->errors) { return $this->errors; }
+			
+			// Записываем новый локальный ключ в базу.
+			$this->db_write_local_key($result['local_key']);
+		}
+		
+		// возвращаем локальный ключ
+		return $this->local_key_last=$result['local_key'];
+	}
+	
+	/*
+	* Записываем локальный ключ в базу данных
+	* 
+	* @return string|boolean string on error; boolean true on success
+	*/
+	public function db_write_local_key($local_key)
+	{
+		@mysql_query(str_replace('{local_key}', $local_key, $this->update_query));
+		if ($mysql_error = mysql_error()) { return $this -> errors = "Error: {$mysql_error}"; }
+		
+		return true;
+	}
+	
+	/*
+	* Чтение локального временного лицензионного ключа из файла.
+	* 
+	* @return string
+	*/
+	public function read_local_key()
+	{ 
+		// проверяем на существования файла с лицензией
+		if ( !file_exists( $path = "{$this->local_key_path}{$this->local_key_name}" ) )
+		{
+			return $this->errors = $this->status_messages['missing_license_file'] . $path;
+		}
+		// проверяем на возможность записи файла лицензии
+		if (!is_writable($path))
+		{
+			return $this->errors = $this->status_messages['license_file_not_writable'] . $path;
+		}
+		
+		// Проверяем на пустоту локального временного ключа
+		if ( !$local_key = @file_get_contents($path) )
+		{
+			// Получаем новый локальный ключ
+			$local_key = $this->fetch_new_local_key();
+			
+			// Проверяем на наличие ошибок
+			if ($this->errors) { return $this->errors; }
+			
+			// записываем новый локальный ключ
+			$this->write_local_key(urldecode($local_key), $path);
+		}
+		
+		// возвращаем локальный ключ
+		return $this->local_key_last = $local_key;
+	}
+	
+	/*
+	* Очищаем временный локальный ключ
+	* 
+	* @param boolean $clear 
+	* @return string on error
+	*/
+	public function clear_cache_local_key($clear=false)
+	{
+		switch(strtolower($this->local_key_storage))
+		{
+			case 'database':
+				$this->db_write_local_key('');
+				break;
+				
+			case 'filesystem':
+				$this->write_local_key('', "{$this->local_key_path}{$this->local_key_name}");
+				break;
+			
+			default:
+				return $this->errors = $this->status_messages['invalid_local_key_storage'];
+		}
+	}
+	
+	/*
+	* Записываем локальный ключ в файл
+	* 
+	* @param string $local_key 
+	* @param string $path 
+	* @return string|boolean (string при ошибке; boolean true при успехе).
+	*/
+	public function write_local_key($local_key, $path)
+	{
+		$fp = @fopen($path, 'w');
+		if (!$fp) { return $this->errors = $this->status_messages['could_not_save_local_key']; }
+		@fwrite($fp, $local_key);
+		@fclose($fp);
+		
+		return true;
+	}
+	
+	/*
+	* Запрос к API сервера лицензий для получения нового локального ключа
+	*  
+	* @return string|false string local key при успехе; boolean false при ошибке.
+	*/
+	private function fetch_new_local_key()
+	{
+		/*
+		 * Cобираем строку запроса
+		 */
+		$querystring = "mod=license&task=protect_validate_license&license_key={$this->license_key}&";
+		$querystring .= $this->build_querystring($this->access_details());
+		
+		/*
+		 * Проверяем наличие ошибок при получении деталей запроса ($this->access_details)
+		 */
+		if ($this->errors)
+		{
+			return false;
+		}
+		
+		/*
+		 *  Получаем приоритет методов запроса.
+		 */
+		$priority = $this->local_key_transport_order;
+
+		/*
+		 * Пробуем получать локальный ключ согласно сорировке методов запроса до успеха
+		 */
+		while (strlen($priority))
+		{
+			$use = substr($priority, 0, 1);
+			
+			// если использовать fsockopen()
+			if ($use=='s') 
+			{ 
+				if ($result = $this->use_fsockopen($this->api_server, $querystring))
+				{
+					break;
+				}
+			}
+			
+			// если использовать curl()
+			if ($use=='c') 
+			{
+				if ($result = $this->use_curl($this->api_server, $querystring))
+				{
+					break;
+				}
+			}
+			
+			// если использовать fopen()
+			if ($use=='f') 
+			{ 
+				if ($result = $this->use_fopen($this->api_server, $querystring))
+				{
+					break;
+				}
+			}
+			
+			$priority = substr($priority, 1);
+		}
+		
+		/*
+		 * Если не удалось выполнить запрос всеми методами,
+		 * выдаем ошибку получения локального ключа
+		 */
+		if (!$result) 
+		{ 
+			$this->errors = $this->status_messages['could_not_obtain_local_key']; 
+			return false;
+		}
+
+		/*
+		 * Если результат запроса вернул ошибку ключа
+		 * То выдаем ошибку + можно заменить Error на ошибку с сервера.
+		 */
+		if (substr($result, 0, 7) == 'Invalid')
+		{ 
+			$this->errors = str_replace('Invalid', 'Error', $result); 
+			return false;
+		}
+
+		/*
+		 * Если результат запроса вернул ошибку (например сервер недоступен)
+		 */
+		if (substr($result, 0, 5) == 'Error')
+		{
+			$this->errors = $result; 
+			return false;
+		}
+		
+		return $result;
+	}
+	
+	/*
+	* Конвертация массива в строку запроса в виде key / value пар
+	* 
+	* @param array $array 
+	* @return string
+	*/
+	private function build_querystring($array)
+	{
+		$buffer='';
+		foreach ((array)$array as $key => $value)
+		{
+			if ($buffer) { $buffer.='&'; }
+			$buffer.="{$key}={$value}";
+		}
+		
+		return $buffer;
+	}
+	
+	/*
+	* Собираем массив с деталями доступа
+	* 
+	* @return array
+	*/
+	private function access_details()
+	{
+		$access_details=array();
+		
+		// Если функция phpinfo() существует
+		if (function_exists('phpinfo'))
+		{
+			ob_start();
+			phpinfo();
+			$phpinfo = ob_get_contents();
+			ob_end_clean();
+			
+			$list = strip_tags($phpinfo);
+			$access_details['domain'] = $this->scrape_phpinfo($list, 'HTTP_HOST');
+			$access_details['ip'] = $this->scrape_phpinfo($list, 'SERVER_ADDR');
+			$access_details['directory'] = $this->scrape_phpinfo($list, 'SCRIPT_FILENAME');
+			$access_details['server_hostname'] = $this->scrape_phpinfo($list, 'System');
+			$access_details['server_ip'] = @gethostbyname($access_details['server_hostname']);
+		}
+		
+		// На всякий случай собираем еще данные
+		$access_details['domain'] = ($access_details['domain']) ? $access_details['domain'] : $_SERVER['HTTP_HOST'];
+		$access_details['ip'] = ($access_details['ip']) ? $access_details['ip'] : $this->server_addr();
+		$access_details['directory'] = ($access_details['directory']) ? $access_details['directory'] : $this->path_translated();
+		$access_details['server_hostname'] = ($access_details['server_hostname']) ? $access_details['server_hostname'] : @gethostbyaddr($access_details['ip']);
+		$access_details['server_hostname'] = ($access_details['server_hostname']) ? $access_details['server_hostname'] : 'Unknown';
+		$access_details['server_ip'] = ($access_details['server_ip']) ? $access_details['server_ip'] : @gethostbyaddr($access_details['ip']);
+		$access_details['server_ip'] = ($access_details['server_ip']) ? $access_details['server_ip'] : 'Unknown';
+		
+		// Last resort, send something in...
+		foreach ($access_details as $key => $value)
+		{
+			$access_details[$key]=($access_details[$key])?$access_details[$key]:'Unknown';
+		}
+		
+		// enforce product IDs
+		if ($this->valid_for_product_tiers)
+		{
+			$access_details['valid_for_product_tiers'] = $this->valid_for_product_tiers;
+		}
+		
+		return $access_details;
+	}
+	
+	/*
+	* Получаем путь до директории скрипта
+	* 
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function path_translated()
+	{
+		$option = array('PATH_TRANSLATED', 
+					'ORIG_PATH_TRANSLATED', 
+					'SCRIPT_FILENAME', 
+					'DOCUMENT_ROOT',
+					'APPL_PHYSICAL_PATH');
+					
+		foreach ($option as $key)
+		{
+			if (!isset($_SERVER[$key])||strlen(trim($_SERVER[$key]))<=0) { continue; }
+			
+			if ($this->is_windows() && strpos($_SERVER[$key], '\\'))
+			{
+				return  @substr($_SERVER[$key], 0, @strrpos($_SERVER[$key], '\\'));
+			}
+			
+			return  @substr($_SERVER[$key], 0, @strrpos($_SERVER[$key], '/'));
+		}
+
+		return false;
+	}
+	
+	/*
+	* Получаем айпи адрес сервера
+	* 
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function server_addr()
+	{
+		// todo: сделать внешнюю проверку адреса с сервера лицензий
+		$options = array('SERVER_ADDR', 'LOCAL_ADDR');
+		foreach ($options as $key)
+		{
+			if (isset($_SERVER[$key])) { return $_SERVER[$key]; }
+		}
+		
+		return false;
+	}
+	
+	/*
+	* Получаем детали доступа используя phpinfo()
+	* 
+	* @param array $all 
+	* @param string $target
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function scrape_phpinfo($all, $target)
+	{
+		$all = explode($target, $all);
+		if (count($all) < 2) { return false; }
+		$all = explode("\n", $all[1]);
+		$all = trim($all[0]);
+		
+		if ($target == 'System')
+		{
+			$all = explode(" ", $all);
+			$all = trim($all[(strtolower($all[0]) == 'windows' && strtolower($all[1]) == 'nt')?2:1]);
+		}
+		
+		if ($target=='SCRIPT_FILENAME')
+		{
+			$slash = ($this->is_windows()?'\\':'/');
+		
+			$all = explode($slash, $all);
+			array_pop($all);
+			$all = implode($slash, $all);
+		}
+		
+		if (substr($all, 1, 1) == ']') { return false; }
+		
+		return $all;
+	}
+	
+	/*
+	* Отправка запросов на API сервера лицензий с используя fsockopen
+	* 
+	* @param string $url 
+	* @param string $querystring
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function use_fsockopen($url, $querystring)
+	{
+		if (!function_exists('fsockopen')) { return false; }
+		
+		$url = parse_url($url);
+		
+		$fp = @fsockopen($url['host'], $this->remote_port, $errno, $errstr, $this->remote_timeout);
+		if (!$fp) { return false; }
+		
+		$header="POST {$url['path']} HTTP/1.0\r\n";
+		$header.="Host: {$url['host']}\r\n";
+		$header.="Content-type: application/x-www-form-urlencoded\r\n";
+		$header.="User-Agent: protect (http://www.regger.pw)\r\n";
+		$header.="Content-length: " . @strlen($querystring)."\r\n";
+		$header.="Connection: close\r\n\r\n";
+		$header.=$querystring;
+		
+		$result=false;
+		fputs($fp, $header);
+		while (!feof($fp)) { $result.=fgets($fp, 1024); }
+		fclose ($fp);
+		
+		if (strpos($result, '200')===false) { return false; }
+		
+		$result=explode("\r\n\r\n", $result, 2);
+		
+		if (!$result[1]) { return false; }
+		
+		return $result[1];
+	}
+	
+	/*
+	* Отправка запросов на API сервера лицензий с используя cURL
+	* 
+	* @param string $url 
+	* @param string $querystring
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function use_curl($url, $querystring)
+	{
+		if (!function_exists('curl_init')) { return false; }
+		
+		$curl = curl_init();
+		
+		$header[0] = "Accept: text/xml,application/xml,application/xhtml+xml,";
+		$header[0] .= "text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
+		$header[] = "Cache-Control: max-age=0";
+		$header[] = "Connection: keep-alive";
+		$header[] = "Keep-Alive: 300";
+		$header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
+		$header[] = "Accept-Language: en-us,en;q=0.5";
+		$header[] = "Pragma: ";
+		
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_USERAGENT, 'protect (http://regger.pw)');
+		curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
+		curl_setopt($curl, CURLOPT_ENCODING, 'gzip,deflate');
+		curl_setopt($curl, CURLOPT_AUTOREFERER, true);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $querystring);
+		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $this->remote_timeout);
+		curl_setopt($curl, CURLOPT_TIMEOUT, $this->remote_timeout); // 60
+		
+		$result = curl_exec($curl);
+		$info = curl_getinfo($curl);
+		curl_close($curl);
+		
+		if ((integer)$info['http_code']!=200) { return false; }
+		
+		return $result;
+	}
+	
+	/*
+	* Отправка запросов на API сервера лицензий с используя fopen оболочки file_get_contents()
+	* 
+	* @param string $url 
+	* @param string $querystring
+	* @return string|boolean string при успехе; boolean при ошибке
+	*/
+	private function use_fopen($url, $querystring)
+	{ 
+		if (!function_exists('file_get_contents')) { return false; }
+		
+		return @file_get_contents("{$url}?{$querystring}");
+	}
+	
+	/*
+	* Определяем windows систему
+	* 
+	* @return boolean
+	*/
+	private function is_windows()
+	{
+		return (strtolower(substr(php_uname(), 0, 7)) == 'windows'); 
+	}
+	
+	/*
+	* Печать форматированного массива
+	* 
+	* @param array $stack массив для вывода
+	* @param boolean $stop_execution
+	* @return string 
+	*/
+	private function debug($stack, $stop_execution=true)
+	{
+		$formatted = '<pre>'.var_export((array)$stack, 1).'</pre>';
+		
+		if ($stop_execution) { die($formatted); }
+		
+		return $formatted;
+	}
+	
+	/*
+	* Проверяем на локальность сервера
+	* 
+	* @return bool
+	*/
+	private function get_local_ip()
+	{
+		// Если функция phpinfo() существует
+		if (function_exists('phpinfo'))
+		{
+			ob_start();
+			phpinfo();
+			$phpinfo = ob_get_contents();
+			ob_end_clean();
+			
+			$list = strip_tags($phpinfo);
+			$local_ip = $this->scrape_phpinfo($list, 'SERVER_ADDR');
+		}
+		
+		// На всякий случай собираем еще данные
+		$local_ip = ($local_ip) ? $local_ip : $this->server_addr();
+		
+		if($local_ip == '127.0.0.1')
+			return true;
+		
+		return false;
+	}
+}
+
+/*
+ * Файл локализации статуса лицензии
+ */
+include_once ('Russian.lng');
+
+
+/*
+ * Создаем экземпляр класса
+ */
+$protect = new protect();
+
+/*
+ * Указываем директорию с правами на запись.
+ * В эту директорию будет скачиваться файл лицензии с сервера.
+ */
+$protect->local_key_path = ENGINE_DIR . '/data/';
+
+/*
+ * Устанавливаем локализацию статусов
+ *
+ * @array
+ */
+$protect->status_messages = $protect_status;
+
+/*
+ * Указываем ключ лицензии, например из конфигурации модуля.
+ */
+$protect->license_key = $this->regger_config['license_key'];
+
+/*
+ * Указываем полный путь до сервера лицензий.
+ */
+$protect->api_server = 'http://regger.pw/api/v2/license_check.php';
+
+/*
+ * Указываем секретный ключ
+ * Рекомендуется указывать для каждого модуля свой.
+ */
+$protect->secret_key = 'fdfblhlLgnJDKJklblngkkkrtkghm565678kl78klkUUHtvdfdoghphj';
+
+/*
+ * Запускаем валидацию
+ */
+$protect->validate();
+
+
+// если нет ошибок, то лицензия в боевом состоянии
+if(!$protect->errors)
+{
+	$license = true;
+}
+
+// если есть ошибки и лицензия не на локалке, и если не невозможно получить новый ключ при льготном периоде
+if(($protect->errors != '' && $protect->errors != $protect_status['localhost']) || ($protect->errors != '' && $protect->errors != $protect_status['localhost'] && $protect->errors != $protect_status['could_not_obtain_local_key']))
+{
+	$license = false;
+}
+
+
+?>
