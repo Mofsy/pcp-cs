@@ -1,16 +1,22 @@
 <?php
 /***********************************************************************
- * Protect - система лицензирования для PHP скриптов на серверной основе
+ * PHP code protect
  ***********************************************************************
- * @author       Oleg Budrin <support@regger.pw>
- * @copyright    Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ * @author		Oleg Budrin <ru.mofsy@yandex.ru>
+ * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  **********************************************************************/
 
 class protect
 {
 	/*
+ 	* Статус лицензии
+ 	* @bool
+ 	*/
+	public $status = false;
+
+	/*
 	 * Ошибки, возникшие при валидации
-	 * @bool
+	 * @bool|string
 	 */
 	public $errors = false;
 
@@ -144,33 +150,34 @@ class protect
 		$this->local_key_type = 'protect';
 
 		$this->key_data = array(
-						'custom_fields' => array(),
-						'download_access_expires' => 0,
-						'license_expires' => 0,
-						'local_key_expires' => 0,
-						'status' => 'Invalid',
-						);
+			'custom_fields'           => array(),
+			'download_access_expires' => 0,
+			'license_expires'         => 0,
+			'local_key_expires'       => 0,
+			'status'                  => 'Invalid'
+		);
 
 		$this->status_messages = array(
-						'active' => 'This license is active.',
-						'suspended' => 'Error: This license has been suspended.',
-						'expired' => 'Error: This license has expired.',
-						'pending' => 'Error: This license is pending review.',
-						'download_access_expired' => 'Error: This version of the software was released '.
-													 'after your download access expired. Please '.
-													 'downgrade or contact support for more information.',
-						'missing_license_key' => 'Error: The license key variable is empty.',
-						'unknown_local_key_type' => 'Error: An unknown type of local key validation was requested.',
-						'could_not_obtain_local_key' => 'Error: I could not obtain a new local license key.',
-						'maximum_grace_period_expired' => 'Error: The maximum local license key grace period has expired.',
-						'local_key_tampering' => 'Error: The local license key has been tampered with or is invalid.',
-						'local_key_invalid_for_location' => 'Error: The local license key is invalid for this location.',
-						'missing_license_file' => 'Error: Please create the following file (and directories if they dont exist already): ',
-						'license_file_not_writable' => 'Error: Please make the following path writable: ',
-						'invalid_local_key_storage' => 'Error: I could not determine the local key storage on clear.',
-						'could_not_save_local_key' => 'Error: I could not save the local license key.',
-						'license_key_string_mismatch' => 'Error: The local key is invalid for this license.',
-						'localhost' => 'localhost',
+			'active'                         => 'This license is active.',
+			'suspended'                      => 'Error: This license has been suspended.',
+			'expired'                        => 'Error: This license has expired.',
+			'pending'                        => 'Error: This license is pending review.',
+			'download_access_expired'        => 'Error: This version of the software was released ' .
+				'after your download access expired. Please ' .
+				'downgrade or contact support for more information.',
+			'missing_license_key'            => 'Error: The license key variable is empty.',
+			'unknown_local_key_type'         => 'Error: An unknown type of local key validation was requested.',
+			'could_not_obtain_local_key'     => 'Error: I could not obtain a new local license key.',
+			'maximum_grace_period_expired'   => 'Error: The maximum local license key grace period has expired.',
+			'local_key_tampering'            => 'Error: The local license key has been tampered with or is invalid.',
+			'local_key_invalid_for_location' => 'Error: The local license key is invalid for this location.',
+			'missing_license_file'           => 'Error: Please create the following file (and directories if they dont exist already): ',
+			'license_file_not_writable'      => 'Error: Please make the following path writable: ',
+			'invalid_local_key_storage'      => 'Error: I could not determine the local key storage on clear.',
+			'could_not_save_local_key'       => 'Error: I could not save the local license key.',
+			'license_key_string_mismatch'    => 'Error: The local key is invalid for this license.',
+			'localhost'                      => 'localhost'
+
 		);
 
 	}
@@ -1111,6 +1118,8 @@ class protect
 	*/
 	private function get_local_ip()
 	{
+		$local_ip = '';
+
 		// Если функция phpinfo() существует
 		if (function_exists('phpinfo'))
 		{
