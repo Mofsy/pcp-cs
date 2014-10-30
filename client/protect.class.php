@@ -62,7 +62,7 @@ class protect
 	 *
 	 * @var integer
 	 */
-	public $remote_timeout = 10;
+	public $remote_timeout = 20;
 
 	/*
 	 * User-agent клиента, который
@@ -139,7 +139,7 @@ class protect
 	/*
 	 * дата релиза продукта.
 	 */
-	public $release_date = false;
+	public $release_date = 0;
 
 	/*
 	 * Локальный ключ для обработки
@@ -186,12 +186,8 @@ class protect
 	/*
 	 * Маркер не удачного получения нового локального ключа с сервера
 	 */
-	private  $trigger_delay_period;
+	private $trigger_delay_period;
 
-	/*
-	 * Тип локального ключа
-	 */
-	public $local_key_type = 'protect';
 
 
 	/*
@@ -210,7 +206,7 @@ class protect
 	public function validate()
 	{
 		/*
-		 * Если ключ активации пустой, то выдаем ошибку
+		 * Если ключ активации пустой, возвращаем ошибку
 		 */
 		if (!$this->license_key)
 		{
@@ -238,7 +234,7 @@ class protect
 				$local_key = $this->read_local_key();
 				break;
 			/*
-			 * По умолчанию выдаем ошибку
+			 * По умолчанию возвращаем ошибку
 			 */
 			default:
 				return $this->errors = $this->status_messages['missing_license_key'];
@@ -1070,7 +1066,7 @@ class protect
 	}
 
 	/*
-	* Определяем windows систему
+	* Определяем Windows систему
 	*
 	* @return boolean
 	*/
