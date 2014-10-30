@@ -1,6 +1,5 @@
 <?php
 
-include_once ('Russian.lng');
 include_once ('protect.class.php');
 
 /*
