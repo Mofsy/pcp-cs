@@ -73,6 +73,13 @@ class protect
 	public $local_ua = 'PHP code protect (http://site.ru)';
 
 	/*
+	 * Маркер использования на локальной системе с Windows без активации
+	 *
+	 * @var boolean
+	 */
+	private $use_localhost = true;
+
+	/*
 	 * Маркер режима хранения ключа
 	 *
 	 * filesystem - хранить в файле
@@ -226,9 +233,9 @@ class protect
 		}
 
 		/*
-		 * Если локальный компьютер и Windows
+		 * Если локальный компьютер и Windows, а так же разрешено использование
 		 */
-		if($this->get_local_ip() && $this->is_windows())
+		if($this->use_localhost && $this->get_local_ip() && $this->is_windows())
 		{
 			$this->status = true;
 			return $this->errors = $this->status_messages['localhost'];
@@ -1133,57 +1140,6 @@ class protect
 
 		return false;
 	}
-}
-
-/*
- * Файл локализации статуса лицензии
- */
-include_once ('Russian.lng');
-
-
-/*
- * Создаем экземпляр класса
- */
-$protect = new protect();
-
-/*
- * Указываем директорию с правами на запись.
- * В эту директорию будет скачиваться файл лицензии с сервера.
- */
-$protect->local_key_path = ENGINE_DIR . '/data/';
-
-/*
- * Устанавливаем локализацию статусов
- *
- * @array
- */
-$protect->status_messages = $protect_status;
-
-/*
- * Указываем ключ лицензии, например из конфигурации модуля.
- */
-$protect->license_key = $this->regger_config['license_key'];
-
-/*
- * Указываем полный путь до сервера лицензий.
- */
-$protect->api_server = 'http://regger.pw/api/v2/license_check.php';
-
-/*
- * Запускаем валидацию
- */
-$protect->validate();
-
-// если нет ошибок, то лицензия в боевом состоянии
-if(!$protect->errors)
-{
-	$license = true;
-}
-
-// если есть ошибки и лицензия не на локалке, и если не невозможно получить новый ключ при льготном периоде
-if(($protect->errors != '' && $protect->errors != $protect_status['localhost']) || ($protect->errors != '' && $protect->errors != $protect_status['localhost'] && $protect->errors != $protect_status['could_not_obtain_local_key']))
-{
-	$license = false;
 }
 
 ?>
