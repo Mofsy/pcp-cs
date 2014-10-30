@@ -9,73 +9,84 @@
 class protect
 {
 	/*
- 	* Статус лицензии
- 	* @bool
- 	*/
+ 	 * Статус лицензии
+	 *
+ 	 * @var bool $status true если активна, false если не активна
+ 	 */
 	public $status = false;
 
 	/*
 	 * Ошибки, возникшие при валидации
-	 * @bool|string
+	 *
+	 * @var bool|string
 	 */
 	public $errors = false;
 
 	/*
 	 * Массив с информацией о лицензии
-	 * @array
+	 *
+	 * @var array
 	 */
 	public $license_info = array();
 
 	/*
 	 * Лицензионный ключ активации
-	 * @string
+	 *
+	 * @var string
 	 */
 	public $license_key = '';
 
 	/*
 	 * Полный адрес сервера, для проверки лицензии и выпуска новой.
-	 * @string
+	 *
+	 * @var string
 	 */
 	public $api_server = '';
 
 	/*
 	 * Удаленный порт сервера лицензий
-	 * @integer
+	 *
+	 * @var integer
 	 */
 	public $remote_port = 80;
 
 	/*
 	 * Период ожидания ответа от сервера лицензий
-	 * @integer
+	 *
+	 * @var integer
 	 */
 	public $remote_timeout = 10;
 
 	/*
+	 * User-agent клиента, который
+	 * посылается вместе с запросом на сервер лицензий
+	 *
+	 * @var string
+	 */
+	public $local_ua = 'PHP code protect (http://site.ru)';
+
+	/*
 	 * Маркер режима хранения ключа
-	 * database - хранить в базе
+	 *
 	 * filesystem - хранить в файле
+	 *
+	 * TODO: добавить хранение ключа в базе данных
+	 *
+	 * @var string
 	 */
 	public $local_key_storage = 'filesystem';
 
 	/*
-	 * ----------
-	 */
-	public $read_query = false;
-
-	/*
-	 * ----------
-	 */
-	public $update_query = false;
-
-	/*
 	 * Полный путь до локального файла с временной лицензией
-	 * @string
+	 *
+	 * @var string
 	 */
 	public $local_key_path = './';
 
 	/*
 	 * Название файла с временной лицензией
-	 * @string
+	 *
+	 * @var string
 	 */
 	public $local_key_name = 'license.lic';
 
@@ -87,22 +98,22 @@ class protect
 	 * c - на cURL
 	 * f - на file_get_contents
 	 *
-	 * @string
+	 * @var string
 	 */
 	public $local_key_transport_order = 'scf';
 
 	/*
-	 * Период после истечения врмени действия локального ключа, после которого лицензия активна.
+	 * Период после истечения времени действия локального ключа, после которого лицензия активна.
 	 * нужно для не отключения скрипта, если сервер лицензий временно не доступен.
 	 *
-	 * @integer
+	 * @var integer
 	 */
-	public $local_key_grace_period = 4;
+	public $local_key_delay_period = 4;
 
 	/*
 	 *
 	 *
-	 * @integer
+	 * @var integer
 	 */
 	public $local_key_last = 0;
 
@@ -119,14 +130,14 @@ class protect
 	/*
 	 * Локальный ключ для обработки
 	 *
-	 * @array
+	 * @var array
 	 */
 	public $key_data;
 
 	/*
 	 * Локализация статусов лицензии и других сообщений
 	 *
-	 * @array
+	 * @var array
 	 */
 	public $status_messages;
 
@@ -136,9 +147,14 @@ class protect
 	public $valid_for_product_tiers = false;
 
 	/*
-	 *
+	 * Маркер не удачного получения нового локального ключа с сервера
 	 */
-	private  $trigger_grace_period;
+	private  $trigger_delay_period;
+
+	/*
+	 * Тип локального ключа
+	 */
+	public $local_key_type = 'protect';
 
 
 	/*
@@ -147,7 +163,6 @@ class protect
 	public function __construct()
 	{
 		$this->valid_local_key_types = array('protect');
-		$this->local_key_type = 'protect';
 
 		$this->key_data = array(
 			'custom_fields'           => array(),
@@ -210,6 +225,7 @@ class protect
 		 */
 		if($this->get_local_ip() && $this->is_windows())
 		{
+			$this->status = true;
 			return $this->errors = $this->status_messages['localhost'];
 		}
 
@@ -219,19 +235,13 @@ class protect
 		switch($this->local_key_storage)
 		{
 			/*
-			 * Получаем из базы данных
-			 */
-			case 'database':
-				$local_key = $this->db_read_local_key();
-				break;
-			/*
 			 * Получаем из файла
 			 */
 			case 'filesystem':
 				$local_key = $this->read_local_key();
 				break;
 			/*
-			 * Поо умолчанию выдаем ошибку
+			 * По умолчанию выдаем ошибку
 			 */
 			default:
 				return $this->errors = $this->status_messages['missing_license_key'];
@@ -240,28 +250,24 @@ class protect
 		/*
 		 * присваиваем сообщение об ошибке, если не удалось получить новый локальный ключ с сервера для сравнения.
 		 */
-		$this->trigger_grace_period = $this->status_messages['could_not_obtain_local_key'];
+		$this->trigger_delay_period = $this->status_messages['could_not_obtain_local_key'];
 
 		/*
 		 * Срок действия локального ключа истек и не возможно получить новый локальный ключ,
 		 * но есть период когда он дополнительно действует.
 		 */
-		if ( $this->errors == $this->trigger_grace_period && $this->local_key_grace_period )
+		if ( $this->errors == $this->trigger_delay_period && $this->local_key_delay_period )
 		{
 			/*
 			 * Получаем льготный период
 			 */
-			$grace = $this->process_grace_period($this->local_key_last);
+			$grace = $this->process_delay_period($this->local_key_last);
 			if ($grace['write'])
 			{
 				/*
 				 * Если есть льготный период, то записываем новый ключ
 				 */
-				if ($this->local_key_storage == 'database')
-				{
-					$this->db_write_local_key($grace['local_key']);
-				}
-				elseif ($this->local_key_storage == 'filesystem')
+				if ($this->local_key_storage == 'filesystem')
 				{
 					$this->write_local_key($grace['local_key'], "{$this->local_key_path}{$this->local_key_name}");
 				}
@@ -304,7 +310,7 @@ class protect
 	* @param integer $grace
 	* @return integer
 	*/
-	private function calc_max_grace($local_key_expires, $grace)
+	private function calc_max_delay($local_key_expires, $grace)
 	{
 		return ( (integer)$local_key_expires + ( (integer)$grace * 86400 ) );
 	}
@@ -315,7 +321,7 @@ class protect
 	* @param string $local_key
 	* @return string
 	*/
-	private function process_grace_period($local_key)
+	private function process_delay_period($local_key)
 	{
 		/*
 		 * Получаем дату истечения локального ключа
@@ -331,16 +337,16 @@ class protect
 		 */
 		$write_new_key = false;
 		$parts = explode("\n\n", $local_key); $local_key = $parts[0];
-		foreach ( $local_key_grace_period=explode(',', $this->local_key_grace_period) as $key => $grace )
+		foreach ( $local_key_delay_period = explode(',', $this->local_key_delay_period) as $key => $delay )
 		{
 			// добавляем разделитель
 			if (!$key) { $local_key.="\n"; }
 
 			// считаем льготные период
-			if ($this->calc_max_grace($local_key_expires, $grace) > time() ) { continue; }
+			if ($this->calc_max_delay($local_key_expires, $delay) > time() ) { continue; }
 
 			// log the new attempt, we'll try again next time
-			$local_key.="\n{$grace}";
+			$local_key.="\n{$delay}";
 
 			$write_new_key = true;
 		}
@@ -348,7 +354,7 @@ class protect
 		/*
 		 * Проверяем максимальный лимит льготного периода
 		 */
-		if ( time() > $this->calc_max_grace( $local_key_expires, array_pop($local_key_grace_period) ) )
+		if ( time() > $this->calc_max_delay( $local_key_expires, array_pop($local_key_delay_period) ) )
 		{
 			return array('write' => false, 'local_key' => '', 'errors' => $this->status_messages['maximum_grace_period_expired']);
 		}
@@ -363,12 +369,12 @@ class protect
 	* @param integer $local_key_expires
 	* @return integer
 	*/
-	private function in_grace_period($local_key, $local_key_expires)
+	private function in_delay_period($local_key, $local_key_expires)
 	{
 		$grace = $this->split_key($local_key, "\n\n");
 		if (!isset($grace[1])) { return -1; }
 
-		return (integer)( $this->calc_max_grace( $local_key_expires, array_pop( explode( "\n", $grace[1] ) ) )-time() );
+		return (integer)( $this->calc_max_delay( $local_key_expires, array_pop( explode( "\n", $grace[1] ) ) )-time() );
 	}
 
 	/*
@@ -551,7 +557,7 @@ class protect
 		 */
 		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
-			if ($this->in_grace_period($local_key, $key_data['local_key_expires']) < 0)
+			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
 				/*
 				 * Если срок истек, удаляем не действительный локальный ключ
@@ -631,50 +637,6 @@ class protect
 	}
 
 	/*
-	* Читаем локальный ключ из базы данных
-	*
-	* @return string
-	*/
-
-	public function db_read_local_key()
-	{
-		$query = @mysql_query($this->read_query);
-		if ($mysql_error=mysql_error()) { return $this -> errors="Error: {$mysql_error}"; }
-
-		$result = @mysql_fetch_assoc($query);
-		if ($mysql_error=mysql_error()) { return $this -> errors="Error: {$mysql_error}"; }
-
-		// если локальный ключ пустой
-		if (!$result['local_key'])
-		{
-			// Получаем новый локальный ключ
-			$result['local_key'] = $this->fetch_new_local_key();
-
-			// Все ли в порядке? Проверяем ошибки получения ключа, если есть то возвращаем.
-			if ($this->errors) { return $this->errors; }
-
-			// Записываем новый локальный ключ в базу.
-			$this->db_write_local_key($result['local_key']);
-		}
-
-		// возвращаем локальный ключ
-		return $this->local_key_last=$result['local_key'];
-	}
-
-	/*
-	* Записываем локальный ключ в базу данных
-	*
-	* @return string|boolean string on error; boolean true on success
-	*/
-	public function db_write_local_key($local_key)
-	{
-		@mysql_query(str_replace('{local_key}', $local_key, $this->update_query));
-		if ($mysql_error = mysql_error()) { return $this -> errors = "Error: {$mysql_error}"; }
-
-		return true;
-	}
-
-	/*
 	* Чтение локального временного лицензионного ключа из файла.
 	*
 	* @return string
@@ -715,14 +677,10 @@ class protect
 	* @param boolean $clear
 	* @return string on error
 	*/
-	public function clear_cache_local_key($clear=false)
+	public function clear_cache_local_key()
 	{
 		switch(strtolower($this->local_key_storage))
 		{
-			case 'database':
-				$this->db_write_local_key('');
-				break;
-
 			case 'filesystem':
 				$this->write_local_key('', "{$this->local_key_path}{$this->local_key_name}");
 				break;
@@ -759,7 +717,7 @@ class protect
 		/*
 		 * Cобираем строку запроса
 		 */
-		$querystring = "mod=license&task=protect_validate_license&license_key={$this->license_key}&";
+		$querystring = "param=value&param2=value2&license_key={$this->license_key}&";
 		$querystring .= $this->build_querystring($this->access_details());
 
 		/*
@@ -778,12 +736,14 @@ class protect
 		/*
 		 * Пробуем получать локальный ключ согласно сорировке методов запроса до успеха
 		 */
+		$result = false;
+
 		while (strlen($priority))
 		{
 			$use = substr($priority, 0, 1);
 
 			// если использовать fsockopen()
-			if ($use=='s')
+			if ($use == 's')
 			{
 				if ($result = $this->use_fsockopen($this->api_server, $querystring))
 				{
@@ -792,7 +752,7 @@ class protect
 			}
 
 			// если использовать curl()
-			if ($use=='c')
+			if ($use == 'c')
 			{
 				if ($result = $this->use_curl($this->api_server, $querystring))
 				{
@@ -801,7 +761,7 @@ class protect
 			}
 
 			// если использовать fopen()
-			if ($use=='f')
+			if ($use == 'f')
 			{
 				if ($result = $this->use_fopen($this->api_server, $querystring))
 				{
@@ -999,31 +959,42 @@ class protect
 	*/
 	private function use_fsockopen($url, $querystring)
 	{
-		if (!function_exists('fsockopen')) { return false; }
+		if (!function_exists('fsockopen')) {
+			return false;
+		}
 
 		$url = parse_url($url);
 
 		$fp = @fsockopen($url['host'], $this->remote_port, $errno, $errstr, $this->remote_timeout);
-		if (!$fp) { return false; }
 
-		$header="POST {$url['path']} HTTP/1.0\r\n";
-		$header.="Host: {$url['host']}\r\n";
-		$header.="Content-type: application/x-www-form-urlencoded\r\n";
-		$header.="User-Agent: protect (http://www.regger.pw)\r\n";
-		$header.="Content-length: " . @strlen($querystring)."\r\n";
-		$header.="Connection: close\r\n\r\n";
-		$header.=$querystring;
+		if (!$fp) {
+			return false;
+		}
 
-		$result=false;
+		$header = "POST {$url['path']} HTTP/1.0\r\n";
+		$header .= "Host: {$url['host']}\r\n";
+		$header .= "Content-type: application/x-www-form-urlencoded\r\n";
+		$header .= "User-Agent: " . $this->local_ua . "\r\n";
+		$header .= "Content-length: " . @strlen($querystring) . "\r\n";
+		$header .= "Connection: close\r\n\r\n";
+		$header .= $querystring;
+
+		$result = false;
 		fputs($fp, $header);
-		while (!feof($fp)) { $result.=fgets($fp, 1024); }
-		fclose ($fp);
+		while (!feof($fp)) {
+			$result .= fgets($fp, 1024);
+		}
+		fclose($fp);
 
-		if (strpos($result, '200')===false) { return false; }
+		if (strpos($result, '200') === false) {
+			return false;
+		}
 
-		$result=explode("\r\n\r\n", $result, 2);
+		$result = explode("\r\n\r\n", $result, 2);
 
-		if (!$result[1]) { return false; }
+		if (!$result[1]) {
+			return false;
+		}
 
 		return $result[1];
 	}
@@ -1051,7 +1022,7 @@ class protect
 		$header[] = "Pragma: ";
 
 		curl_setopt($curl, CURLOPT_URL, $url);
-		curl_setopt($curl, CURLOPT_USERAGENT, 'protect (http://regger.pw)');
+		curl_setopt($curl, CURLOPT_USERAGENT, $this->local_ua);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 		curl_setopt($curl, CURLOPT_ENCODING, 'gzip,deflate');
 		curl_setopt($curl, CURLOPT_AUTOREFERER, true);
@@ -1060,7 +1031,7 @@ class protect
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $this->remote_timeout);
-		curl_setopt($curl, CURLOPT_TIMEOUT, $this->remote_timeout); // 60
+		curl_setopt($curl, CURLOPT_TIMEOUT, $this->remote_timeout);
 
 		$result = curl_exec($curl);
 		$info = curl_getinfo($curl);
