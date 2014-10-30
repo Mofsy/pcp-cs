@@ -37,6 +37,13 @@ class protect
 	public $license_key = '';
 
 	/*
+	 * Секретный локальный ключ
+	 *
+	 * @var string
+	 */
+	public $secret_key = 'fdfblhlLgnJDKJklblngkk6krtkghm565678kl78klkUUHtvdfdoghphj';
+
+	/*
 	 * Полный адрес сервера, для проверки лицензии и выпуска новой.
 	 *
 	 * @var string
@@ -132,7 +139,13 @@ class protect
 	 *
 	 * @var array
 	 */
-	public $key_data;
+	public $local_key_data = array(
+		'download_access_expires' => 0,
+		'license_expires'         => 0,
+		'local_key_expires'       => 0,
+		'status'                  => 'Invalid',
+		'custom_fields'           => array()
+	);
 
 	/*
 	 * Локализация статусов лицензии и других сообщений
@@ -164,14 +177,6 @@ class protect
 	{
 		$this->valid_local_key_types = array('protect');
 
-		$this->key_data = array(
-			'custom_fields'           => array(),
-			'download_access_expires' => 0,
-			'license_expires'         => 0,
-			'local_key_expires'       => 0,
-			'status'                  => 'Invalid'
-		);
-
 		$this->status_messages = array(
 			'active'                         => 'This license is active.',
 			'suspended'                      => 'Error: This license has been suspended.',
@@ -191,7 +196,7 @@ class protect
 			'invalid_local_key_storage'      => 'Error: I could not determine the local key storage on clear.',
 			'could_not_save_local_key'       => 'Error: I could not save the local license key.',
 			'license_key_string_mismatch'    => 'Error: The local key is invalid for this license.',
-			'localhost'                      => 'localhost'
+			'localhost'                      => 'This license is active (localhost).'
 
 		);
 
@@ -261,24 +266,28 @@ class protect
 			/*
 			 * Получаем льготный период
 			 */
-			$grace = $this->process_delay_period($this->local_key_last);
-			if ($grace['write'])
+			$delay = $this->process_delay_period($this->local_key_last);
+
+			/*
+			 * Если льготный период имеется
+			 */
+			if ($delay['write'])
 			{
 				/*
-				 * Если есть льготный период, то записываем новый ключ
+				 * Записываем новый ключ с учетом льготного периода
 				 */
 				if ($this->local_key_storage == 'filesystem')
 				{
-					$this->write_local_key($grace['local_key'], "{$this->local_key_path}{$this->local_key_name}");
+					$this->write_local_key($delay['local_key'], "{$this->local_key_path}{$this->local_key_name}");
 				}
 			}
 
 			/*
 			 * Если все льготные периоды использованы
 			 */
-			if ($grace['errors'])
+			if ($delay['errors'])
 			{
-				return $this->errors = $grace['errors'];
+				return $this->errors = $delay['errors'];
 			}
 
 			/*
@@ -324,11 +333,15 @@ class protect
 	private function process_delay_period($local_key)
 	{
 		/*
-		 * Получаем дату истечения локального ключа
+		 * Убираем гадости
 		 */
 		$local_key_src = $this->decode_key($local_key);
 		$parts = $this->split_key($local_key_src);
 		$key_data = unserialize($parts[0]);
+
+		/*
+		 * Получаем дату истечения локального ключа
+		 */
 		$local_key_expires = (integer)$key_data['local_key_expires'];
 		unset($parts, $key_data);
 
@@ -336,17 +349,23 @@ class protect
 		 * Правила льготного периода
 		 */
 		$write_new_key = false;
-		$parts = explode("\n\n", $local_key); $local_key = $parts[0];
-		foreach ( $local_key_delay_period = explode(',', $this->local_key_delay_period) as $key => $delay )
+		$parts = explode("\n\n", $local_key);
+		$local_key = $parts[0];
+
+		foreach ($local_key_delay_period = explode(',', $this->local_key_delay_period) as $key => $delay)
 		{
 			// добавляем разделитель
-			if (!$key) { $local_key.="\n"; }
+			if (!$key) {
+				$local_key .= "\n";
+			}
 
-			// считаем льготные период
-			if ($this->calc_max_delay($local_key_expires, $delay) > time() ) { continue; }
+			// считаем льготный период
+			if ($this->calc_max_delay($local_key_expires, $delay) > time()) {
+				continue;
+			}
 
 			// log the new attempt, we'll try again next time
-			$local_key.="\n{$delay}";
+			$local_key .= "\n{$delay}";
 
 			$write_new_key = true;
 		}
@@ -371,10 +390,13 @@ class protect
 	*/
 	private function in_delay_period($local_key, $local_key_expires)
 	{
-		$grace = $this->split_key($local_key, "\n\n");
-		if (!isset($grace[1])) { return -1; }
+		$delay = $this->split_key($local_key, "\n\n");
 
-		return (integer)( $this->calc_max_delay( $local_key_expires, array_pop( explode( "\n", $grace[1] ) ) )-time() );
+		if (!isset($delay[1])) {
+			return -1;
+		}
+
+		return (integer)($this->calc_max_delay($local_key_expires, array_pop(explode("\n", $delay[1]))) - time());
 	}
 
 	/*
@@ -486,7 +508,7 @@ class protect
 	}
 
 	/*
-	* Валидация локального лицензионного ключа
+	* Валидация локального ключа
 	*
 	* @param string $local_key
 	* @return string
@@ -526,7 +548,7 @@ class protect
 		$key_data = unserialize($parts[0]);
 		$instance = $key_data['instance']; unset($key_data['instance']);
 		$enforce = $key_data['enforce']; unset($key_data['enforce']);
-		$this->key_data = $key_data;
+		$this->local_key_data = $key_data;
 
 		/*
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
@@ -1146,12 +1168,6 @@ $protect->license_key = $this->regger_config['license_key'];
  * Указываем полный путь до сервера лицензий.
  */
 $protect->api_server = 'http://regger.pw/api/v2/license_check.php';
-
-/*
- * Указываем секретный ключ
- * Рекомендуется указывать для каждого модуля свой.
- */
-$protect->secret_key = 'fdfblhlLgnJDKJklblngkkkrtkghm565678kl78klkUUHtvdfdoghphj';
 
 /*
  * Запускаем валидацию
