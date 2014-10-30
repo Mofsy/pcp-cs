@@ -166,7 +166,6 @@ class protect
 		'pending'                        => 'Error: This license is pending review.',
 		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
-		'unknown_local_key_type'         => 'Error: An unknown type of local key validation was requested.',
 		'could_not_obtain_local_key'     => 'Error: I could not obtain a new local license key.',
 		'maximum_grace_period_expired'   => 'Error: The maximum local license key grace period has expired.',
 		'local_key_tampering'            => 'Error: The local license key has been tampered with or is invalid.',
@@ -216,14 +215,6 @@ class protect
 		if (!$this->license_key)
 		{
 			return $this->errors = $this->status_messages['missing_license_key'];
-		}
-
-		/*
-		 * Если нет действующего типа локального ключа
-		 */
-		if (!in_array(strtolower($this->local_key_type), $this->valid_local_key_types))
-		{
-			return $this->errors = $this->status_messages['unknown_local_key_type'];
 		}
 
 		/*
@@ -585,7 +576,7 @@ class protect
 				/*
 				 * Если срок истек, удаляем не действительный локальный ключ
 				 */
-				$this->clear_cache_local_key(true);
+				$this->clear_cache_local_key();
 
 				/*
 				 * запускаем получение нового ключа.
@@ -617,6 +608,7 @@ class protect
 		foreach ((array)$enforce as $key)
 		{
 			$valid_accesses = $this->extract_access_set($instance, $key);
+
 			if (!$this->validate_access($access_details[$key], $valid_accesses))
 			{
 				$conflicts[$key] = true;
@@ -640,23 +632,25 @@ class protect
 					}
 				}
 				elseif (in_array($key, array('server_hostname')))
-					{
+				{
 					if ($this->validate_access($this->wildcard_server_hostname($access_details[$key]), $valid_accesses))
-						{
+					{
 						unset($conflicts[$key]);
-						}
 					}
 				}
+			}
 		}
 
 		/*
 		 * Если конфликты для локального ключа остались, то выдаем ошибку.
-		 * Скрпт не имеет права выполняться в данном расположении по указанной лицензии.
+		 * Скрипт не имеет права выполняться в данном расположении по указанной лицензии.
 		 */
 		if (!empty($conflicts))
 		{
 			return $this->errors = $this->status_messages['local_key_invalid_for_location'];
 		}
+
+		return $this->status = true;
 	}
 
 	/*
@@ -696,20 +690,16 @@ class protect
 
 	/*
 	* Очищаем временный локальный ключ
-	*
-	* @param boolean $clear
-	* @return string on error
 	*/
 	public function clear_cache_local_key()
 	{
-		switch(strtolower($this->local_key_storage))
+		if($this->local_key_storage == 'filesystem')
 		{
-			case 'filesystem':
-				$this->write_local_key('', "{$this->local_key_path}{$this->local_key_name}");
-				break;
-
-			default:
-				return $this->errors = $this->status_messages['invalid_local_key_storage'];
+			$this->write_local_key('', "{$this->local_key_path}{$this->local_key_name}");
+		}
+		else
+		{
+			$this->errors = $this->status_messages['invalid_local_key_storage'];
 		}
 	}
 
@@ -1087,22 +1077,6 @@ class protect
 	private function is_windows()
 	{
 		return (strtolower(substr(php_uname(), 0, 7)) == 'windows');
-	}
-
-	/*
-	* Печать форматированного массива
-	*
-	* @param array $stack массив для вывода
-	* @param boolean $stop_execution
-	* @return string
-	*/
-	private function debug($stack, $stop_execution=true)
-	{
-		$formatted = '<pre>'.var_export((array)$stack, 1).'</pre>';
-
-		if ($stop_execution) { die($formatted); }
-
-		return $formatted;
 	}
 
 	/*
