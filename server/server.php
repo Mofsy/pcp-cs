@@ -1,11 +1,12 @@
 <?php
 /*
-=====================================================
- Файл: license_check.php
------------------------------------------------------
- Назначение: Проверка валидности и активация лицензии
-=====================================================
-*/
+ * PHP code protect
+ *
+ * @link 		https://github.com/Mofsy/pcp-cs
+ * @author		Oleg Budrin <ru.mofsy@yandex.ru>
+ * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ */
+
 
 @error_reporting ( E_ALL ^ E_WARNING ^ E_NOTICE );
 @ini_set ( 'display_errors', false );

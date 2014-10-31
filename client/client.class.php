@@ -1,12 +1,13 @@
 <?php
-/***********************************************************************
+/*
  * PHP code protect
- ***********************************************************************
+ *
+ * @link 		https://github.com/Mofsy/pcp-cs
  * @author		Oleg Budrin <ru.mofsy@yandex.ru>
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
- **********************************************************************/
+ */
 
-class protect
+class Protect
 {
 	/*
  	 * Статус лицензии
@@ -167,7 +168,7 @@ class protect
 		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
 		'could_not_obtain_local_key'     => 'Error: I could not obtain a new local license key.',
-		'maximum_grace_period_expired'   => 'Error: The maximum local license key grace period has expired.',
+		'maximum_delay_period_expired'   => 'Error: The maximum local license key delay period has expired.',
 		'local_key_tampering'            => 'Error: The local license key has been tampered with or is invalid.',
 		'local_key_invalid_for_location' => 'Error: The local license key is invalid for this location.',
 		'missing_license_file'           => 'Error: Please create the following file (and directories if they dont exist already): ',
@@ -304,12 +305,12 @@ class protect
 	* Расчитываем максимальное время действия льготного периода
 	*
 	* @param integer $local_key_expires
-	* @param integer $grace
+	* @param integer $delay
 	* @return integer
 	*/
-	private function calc_max_delay($local_key_expires, $grace)
+	private function calc_max_delay($local_key_expires, $delay)
 	{
-		return ( (integer)$local_key_expires + ( (integer)$grace * 86400 ) );
+		return ( (integer)$local_key_expires + ( (integer)$delay * 86400 ) );
 	}
 
 	/*
@@ -363,7 +364,7 @@ class protect
 		 */
 		if ( time() > $this->calc_max_delay( $local_key_expires, array_pop($local_key_delay_period) ) )
 		{
-			return array('write' => false, 'local_key' => '', 'errors' => $this->status_messages['maximum_grace_period_expired']);
+			return array('write' => false, 'local_key' => '', 'errors' => $this->status_messages['maximum_delay_period_expired']);
 		}
 
 		return array('write' => $write_new_key, 'local_key' => $local_key, 'errors' => false);
