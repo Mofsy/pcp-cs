@@ -21,12 +21,12 @@ $db_pass = 'test';
 $db_name = 'test';
 $db_prefix = 'pcp';
 
-include_once('server.class.php');
+include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'server.class.php');
 
 /*
  * Создаем экземпляр класса сервера
  */
-$server = new ProtectServer($db_host, $db_user, $db_pass, $db_name, $db_prefix);
+$server = new Mofsy\License\Server\Protect($db_host, $db_user, $db_pass, $db_name, $db_prefix);
 
 /*
  * Запускаем сервер

@@ -12,12 +12,12 @@
 @ini_set ( 'html_errors', false );
 @ini_set ( 'error_reporting', E_ALL ^ E_WARNING ^ E_NOTICE );
 
-include_once('client.class.php');
+include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'client.class.php');
 
 /*
  * Создаем экземпляр класса
  */
-$protect = new Protect();
+$protect = new Mofsy\License\Client\Protect();
 
 /*
  * Указываем директорию с правами на запись.

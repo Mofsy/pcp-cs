@@ -7,7 +7,10 @@
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
-class ProtectServer {
+namespace Mofsy\License\Server;
+
+
+class Protect {
 
 	/*
 	 * Префикс таблиц базы данных
@@ -23,7 +26,6 @@ class ProtectServer {
 	 */
 	private $_db;
 
-
 	/*
 	 * Конструктор класса
 	 */
@@ -31,7 +33,8 @@ class ProtectServer {
 	{
 		$this->_db_prefix = $db_prefix;
 
-		include_once('database.class.php');
+
+		include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'database.class.php');
 		$this->_db = new Db($db_user, $db_pass, $db_name, $db_host);
 	}
 

@@ -7,6 +7,9 @@
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
+namespace Mofsy\License\Server;
+
+
 class Db
 {
 	public $id = false;
