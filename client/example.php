@@ -44,10 +44,11 @@ $protect->license_key = 'WEFS-ERGERG-GRGERG-NGNFGN-SDFSDF';
  * Устанавливаем локализацию статусов и ошибок
  */
 $protect->status_messages = array(
-	'active'                         => '<span style="color:green;">Активна</span>',
+	'status_1'                         => '<span style="color:green;">Активна</span>',
 	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',
-	'suspended'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
-	'expired'                        => '<span style="color:red;">Ошибка</span>: срок лицензии вышел.',
+	'status_4'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
+	'status_2'                        => '<span style="color:red;">Ошибка</span>: срок лицензии вышел.',
+	'status_3'                        => '<span style="color:orange;">Внимание</span>: лицензия переиздана. Ожидает повторной активации.',
 	'pending'                        => '<span style="color:red;">Ошибка</span>: лицензия ожидает рассмотрения.',
 	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для этой версии скачивание обновлений запрещено. Пожалуйста поставьте более старую версию модуля.',
 	'missing_license_key'            => '<span style="color:red;">Ошибка</span>: лицензионный ключ не указан.',

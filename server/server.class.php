@@ -58,9 +58,9 @@ class ProtectServer {
 			if($key_data = $this->licenseKeyGet($client_data['key']))
 			{
 				/*
-			     * Если лицензионный ключ не активирован
+			     * Если лицензионный ключ не активирован или переиздан
 				 */
-				if ($key_data['status'] == 0)
+				if ($key_data['status'] == 0 || $key_data['status'] == 3)
 				{
 					$key_data = $this->licenseKeyActivate($client_data);
 				}
@@ -92,8 +92,8 @@ class ProtectServer {
 	/*
 	 * Генерация локального ключа
 	 *
-	 * @param string $license_key лицензионный ключ
-	 * @param string $domain доменное имя, на котором активирована лицензия
+	 * @param array $key_data Информация о лицензии
+	 * @param array $method_data Информация о методе проверки лицензионного ключа
 	 */
 
 	public function localKeyCreate($key_data, $method_data)
@@ -105,78 +105,83 @@ class ProtectServer {
 		 */
 		$instance = array();
 
-		$instance['domain'] = array(0 => "$domain", 1 => "www.$domain");
+		$instance['domain'] = array(0 => $key_data['domain'], 1 => "www." . $key_data['domain']);
+
+		/*
+		 * Маркер проверки, указывает на то, что надо проверять в данных
+		 */
+		$local_key['enforce'] = $method_data['enforce'];
 
 		/*
 		 * Уникальный идентификатор клиента
 		 */
-		$key_data['customer'] = $license_user_id;
+		$local_key['customer'] = '';
 
 		/*
 		 * Уникальный логин клиента на сайте
 		 */
-		$key_data['user'] = $license_user_name;
+		$local_key['user'] = '';
 
 		/*
 		 * Лицензионный ключ
 		 */
-		$key_data['license_key_string'] = $license_key;
+		$local_key['license_key_string'] = $key_data['key'];
 
 		/*
 		 * Данные о том, что следует проверять
 		 */
 		$key_data['instance'] = $instance;
 
-		/*
-		 * Маркер проверки, указывает на то, что надо проверять в данных
-		 */
-		$key_data['enforce'] = $enforce;
 
 		/*
 		 * Кастомные поля, не учитываются
 		 */
-		$key_data['custom_fields'] = array();
+		$local_key['custom_fields'] = array();
 
 		/*
 		 * Время истечения срока скачивания модуля
 		 */
-		$key_data['download_access_expires'] = 0;
+		$local_key['download_access_expires'] = 0;
 
 		/*
 		 * Время истечения срока поддержки
 		 */
-		$key_data['support_access_expires'] = 0;
+		$local_key['support_access_expires'] = 0;
 
 		/*
 		 * Дата окончания лицензии в Unix-времени
 		 */
-		$key_data['license_expires'] = $license_expires;
+		$local_key['license_expires'] = $key_data['license_expires'];
 
 		/*
 		 * Время истечения локального ключа
 		 * берем количество дней из метода, умножаем его на количество секунд в сутках и прибавляем к Unix-времени.
 		 */
-		$key_data['local_key_expires'] = ((integer)$check_period * 86400) + time();
+		$local_key['local_key_expires'] = ((integer)$method_data['check_period'] * 86400) + time();
 
 		/*
-		 * Статус лицензии, если вернуть другой, то лицензия перестанет работать
+		 * Статус лицензии
+		 *
+		 * 0 - не активирована
+		 * 1 - активна (активирована)
+		 * 2 - срок истек
+		 * 3 - лицензия переиздана
+		 * 4 - действие приостановлено
+		 *
 		 */
-		if ($license_status == 0 || $license_status == 1 || $license_status == 3)
-			$status = 'Active';
-
-		$key_data['status'] = strtolower($status);
+		$local_key['status'] = (integer)$key_data['status'];
 
 		/*
-		 * Сериализуем все данные лицензии
+		 * Сериализуем все данные локального ключа
 		 */
-		$key_data = serialize($key_data);
+		$local_key = serialize($local_key);
 
 		/*
 		 * Конечная обработка всех данных
 		 */
 		$license_info = array();
-		$license_info[0] = $key_data;
-		$license_info[1] = md5($secret_key.$license_info[0]);
+		$license_info[0] = $local_key;
+		$license_info[1] = md5($method_data['secret_key'] . $license_info[0]);
 		$license_info[2] = md5( microtime() );
 		$license_info = base64_encode(implode( "{protect}", $license_info ));
 

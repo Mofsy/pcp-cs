@@ -126,11 +126,11 @@ class Protect
 	public $local_key_delay_period = 4;
 
 	/*
-	 *
+	 * Новый локальный ключ
 	 *
 	 * @var integer
 	 */
-	public $local_key_last = 0;
+	public $local_key_last;
 
 	/*
 	 * Период, в течении которого доступно скачивание.
@@ -138,7 +138,7 @@ class Protect
 	public $validate_download_access = false;
 
 	/*
-	 * дата релиза продукта.
+	 * дата релиза продукта в UNIX формате
 	 */
 	public $release_date = 0;
 
@@ -161,9 +161,9 @@ class Protect
 	 * @var array
 	 */
 	public $status_messages = array(
-		'active'                         => 'This license is active.',
-		'suspended'                      => 'Error: This license has been suspended.',
-		'expired'                        => 'Error: This license has expired.',
+		'status_1'                         => 'This license is active.',
+		'status_4'                      => 'Error: This license has been suspended.',
+		'status_2'                        => 'Error: This license has expired.',
 		'pending'                        => 'Error: This license is pending review.',
 		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
@@ -180,15 +180,9 @@ class Protect
 	);
 
 	/*
-	 *
-	 */
-	public $valid_for_product_tiers = false;
-
-	/*
 	 * Маркер не удачного получения нового локального ключа с сервера
 	 */
 	private $trigger_delay_period;
-
 
 
 	/*
@@ -234,6 +228,7 @@ class Protect
 			case 'filesystem':
 				$local_key = $this->read_local_key();
 				break;
+
 			/*
 			 * По умолчанию возвращаем ошибку
 			 */
@@ -242,7 +237,7 @@ class Protect
 		}
 
 		/*
-		 * присваиваем сообщение об ошибке, если не удалось получить новый локальный ключ с сервера для сравнения.
+		 * присваиваем сообщение об ошибке, для случая, если не удастся получить новый локальный ключ с сервера
 		 */
 		$this->trigger_delay_period = $this->status_messages['could_not_obtain_local_key'];
 
@@ -515,7 +510,7 @@ class Protect
 		$parts = $this->split_key($local_key_src);
 
 		/*
-		 * Проверяем на наличие всех частей, если нет, то мы не можем проверять дальше.
+		 * Проверяем на наличие всех частей, если нет, то мы не можем проверять дальше
 		 */
 		if (!isset($parts[1]))
 		{
@@ -544,15 +539,15 @@ class Protect
 		 */
 		if ( (string)$key_data['license_key_string'] != (string)$this->license_key )
 		{
-			return $this->errors=$this->status_messages['license_key_string_mismatch'];
+			return $this->errors = $this->status_messages['license_key_string_mismatch'];
 		}
 
 		/*
-		 * проверяем статус лицензии, если она не активна, то возвращаем ошибку
+		 * проверяем статус лицензии, если она не активна и срок не истек, то возвращаем ошибку
 		 */
-		if ( (string)$key_data['status'] != 'active' )
+		if ( (integer)$key_data['status'] != 1 && (integer)$key_data['status'] != 2 )
 		{
-			return $this->errors = $this->status_messages[$key_data['status']];
+			return $this->errors = $this->status_messages['status_' . $key_data['status']];
 		}
 
 		/*
@@ -872,11 +867,6 @@ class Protect
 			$access_details[$key]=($access_details[$key])?$access_details[$key]:'Unknown';
 		}
 
-		// enforce product IDs
-		if ($this->valid_for_product_tiers)
-		{
-			$access_details['valid_for_product_tiers'] = $this->valid_for_product_tiers;
-		}
 
 		return $access_details;
 	}

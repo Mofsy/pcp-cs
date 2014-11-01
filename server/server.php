@@ -12,6 +12,15 @@
 @ini_set ( 'html_errors', false );
 @ini_set ( 'error_reporting', E_ALL ^ E_WARNING ^ E_NOTICE );
 
+/*
+ * Конфигурация подключения к базе данных
+ */
+$db_host = 'localhost';
+$db_user = 'test';
+$db_pass = 'test';
+$db_name = 'test';
+$db_prefix = 'pcp';
+
 include_once('server.class.php');
 
 /*
