@@ -1106,5 +1106,3 @@ class Protect
 		return false;
 	}
 }
-
-?>

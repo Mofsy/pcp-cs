@@ -82,5 +82,3 @@ if($protect->status)
  */
 echo $protect->errors;
 
-
-?>
