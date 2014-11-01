@@ -14,12 +14,14 @@ class ProtectServer {
 	 *
 	 * @var string
 	 */
-	public $db_prefix = '';
+	private $_db_prefix = 'pcp';
 
 	/*
 	 * Объект базы данных
+	 *
+	 * @var object
 	 */
-	public $db;
+	private $_db;
 
 
 	/*
@@ -27,8 +29,10 @@ class ProtectServer {
 	 */
 	public function __construct($db_host, $db_user, $db_pass, $db_name, $db_prefix)
 	{
+		$this->_db_prefix = $db_prefix;
+
 		include_once('database.class.php');
-		$this->db = new Db($db_user, $db_pass, $db_name, $db_host);
+		$this->_db = new Db($db_user, $db_pass, $db_name, $db_host);
 	}
 
 	/*
@@ -36,76 +40,52 @@ class ProtectServer {
 	 */
 	public function __destruct()
 	{
-		$this->db->close();
+		$this->_db->close();
 	}
 
 	/*
-	 *
+	 * Запускаем сервер на прослушивание запроов от клиента
 	 */
 	public function run()
 	{
+		// TODO: Сделать занесение всех обращений в таблицу логов базы данных
 
-
-		/*
-		** Проверяем пост запрос от клиента лицензии
-		*/
-		if($_POST['license_key']) {
-
+		if ($client_data = $this->clientDataGet())
+		{
 			/*
-			   Если отсутствует в базе такой лицензионный ключ активации */
-			if (count($row) < 1) {
-				// заносим попытку в базу и все пришедшие данные
-				$db->query( "INSERT INTO " . PREFIX . "_clients_license_logs SET `l_status` = 'Invalid', `date` = '$date', `l_key` = '$key', `l_id` = '', `l_domain` = '$domain', `l_ip` = '$ip', `l_directory` = '$directory', `l_server_hostname` = '$server_hostname', `l_server_ip` = '$server_ip', `l_method_id`  = ''" );
-				// выдаем то, что ключ не валиден.
-				die("Invalid");
-			}
-
-			/*
-			   Определяем статус лицензии для лога */
-			if ($license_status == 0 || $license_status == 1 || $license_status == 3)
-				$status = 'Active';
-			else
-				$status = 'Invalid';
-
-			/*
-			   Заносм обращение в лог */
-			$db->query( "INSERT INTO " . PREFIX . "_clients_license_logs SET `l_status` = '$status', `date` = '$date', `l_key` = '$key', `l_id` = '$license_id', `l_domain` = '$domain', `l_ip` = '$ip', `l_directory` = '$directory', `l_server_hostname` = '$server_hostname', `l_server_ip` = '$server_ip', `l_method_id`  = '$license_method_id'" );
-
-
-			//Если у продукта статус 0 или 3, т.е. неактивирован, то заносим все данные в базу, меняем статус и генерируем локальный ключ
-			if ($license_status == 0 || $license_status == 3)
-			{
-				//Заносим в базу данные и меняем статус
-				$db->query( "UPDATE " . PREFIX . "_clients_license SET l_domain='$domain', l_ip='$ip', l_directory='$directory', l_server_hostname='$server_hostname', l_server_ip = '$server_ip', l_status='1', l_last_check='$date' WHERE id='$license_id'" );
-
-				$localkey = create_local_key($license_user_id, $license_user_name, $license_key, $domain, $ip, $directory, $server_hostname, $server_ip, $license_method_id, $license_expires, $license_status, $license_wildcard);
-
-				echo $localkey;
-			}
-
-			// Если лицензия продукта уже была активирована
-			if ($license_status == 1)
+			 * Запрашиваем все данные о лицензионном ключе из базы данных по ключу клиента
+			 */
+			if($key_data = $this->licenseKeyGet($client_data['key']))
 			{
 				/*
-				* Проверяем пришедший домен и принадлежность к доступным поддоменам.
-				*/
-				// если пришедший домен не равен домену из базы, и включены поддомены для лицензии,
-				// то проверяем принадлежность домена к поддоменам и назначаем поддомен в домен если пришел запрос с поддомена активной лицензии
-				$pos = dle_strrpos($domain, $license_domain, $config['charset'] );
-				if($domain != $license_domain && $license_wildcard == 1 && $pos !== false) {
-					$license_domain = $domain;
+			     * Если лицензионный ключ не активирован
+				 */
+				if ($key_data['status'] == 0)
+				{
+					$key_data = $this->licenseKeyActivate($client_data);
 				}
 
-				if ($license_domain != $domain) {die('Invalid');}
+				/*
+				 * Запрашиваем все необходимое о методе из базы данных по полученному ID
+				 */
+				$method_data = $this->licenseKeyMethodGet($key_data['method_id']);
 
+				/*
+				 * Создаем локальный ключ
+				 */
+				$local_key = $this->localKeyCreate($key_data, $method_data);
 
-				$localkey = create_local_key($license_user_id, $license_user_name, $license_key, $domain, $ip, $directory, $server_hostname, $server_ip, $license_method_id, $license_expires, $license_status, $license_wildcard);
-
-				echo $localkey;
-
-				$db->query( "UPDATE " . PREFIX . "_clients_license  SET l_last_check='$date' WHERE id='$license_id'" );
+				/*
+				 * Скармливаем клиенту локальный ключ
+				 */
+				die($local_key);
 			}
 
+			die('Invalid');
+		}
+		else
+		{
+			die('Invalid');
 		}
 	}
 
@@ -116,18 +96,8 @@ class ProtectServer {
 	 * @param string $domain доменное имя, на котором активирована лицензия
 	 */
 
-	public function localKeyCreate($license_key)
+	public function localKeyCreate($key_data, $method_data)
 	{
-		/*
-		 * Запрашиваем все данные о лицензионном ключе из базы данных по ключу
-		 */
-		$key_data = $this->licenseKeyGet($license_key);
-
-		/*
-		 * Запрашиваем все необходимое о методе из базы данных по полученному ID
-		 */
-		$method_data = $this->licenseKeyMethodGet($key_data['method_id']);
-
 
 		/*
 		 * Массив с указателями проверки
@@ -241,8 +211,8 @@ class ProtectServer {
 	{
 		$method_data = array();
 
-		$result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_methods WHERE id='{$license_key_method_id}'");
-		$row = $this->db->get_row($result);
+		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_methods WHERE id='{$license_key_method_id}'");
+		$row = $this->_db->get_row($result);
 
 		/*
 		 * Секретный ключ метода
@@ -265,114 +235,138 @@ class ProtectServer {
 	/*
 	 * Получение всей информации о лицензионном ключе по ключу
 	 *
-	 * @return array|boolean Массив с информацией о ключе, либо false при отсутствие метода
+	 * @return array|boolean Массив с информацией о ключе, либо false при отсутствие ключа
 	 */
 	public function licenseKeyGet($key)
 	{
-		$key_data = array();
 
-		$result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
-		$row = $this->db->get_row($result);
+		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
+		$row = $this->_db->get_row($result);
 
-		/*
-		 * Идентификатор лицензионного ключа
-		 */
-		$key_data['id'] = $row['id'];
+		if(count($row) == 1)
+		{
+			$key_data = array();
 
-		/*
-		 * Лицензионный ключ активации
-		 */
-		$key_data['key'] = $row['l_key'];
+			/*
+			 * Идентификатор лицензионного ключа
+			 */
+			$key_data['id'] = $row['id'];
 
-		/*
-		 * Идентификатор клиента на сайте
-		 */
-		$key_data['user_id'] = $row['user_id'];
+			/*
+			 * Лицензионный ключ активации
+			 */
+			$key_data['key'] = $row['l_key'];
 
-		/*
-		 * Логин клиента на сайте
-		 */
-		$key_data['user_name'] = $row['user_name'];
+			/*
+			 * Идентификатор клиента на сайте
+			 */
+			$key_data['user_id'] = $row['user_id'];
 
-		/*
-		 * Доменное имя лицензии, если она была активирована
-		 */
-		$key_data['domain'] = $row['l_domain'];
+			/*
+			 * Логин клиента на сайте
+			 */
+			$key_data['user_name'] = $row['user_name'];
 
-		/*
-		 * Разрешено ли использовать на поддоменах
-		 *
-		 * 1 - разрешено
-		 * 0 - запрещено
-		 */
-		$key_data['domain_wildcard'] = $row['l_domain_wildcard'];
+			/*
+			 * Доменное имя лицензии, если она была активирована
+			 */
+			$key_data['domain'] = $row['l_domain'];
 
-		/*
-		 * Айпи адрес сервера
-		 */
-		$key_data['ip'] = $row['l_ip'];
+			/*
+			 * Разрешено ли использовать на поддоменах
+			 *
+			 * 1 - разрешено
+			 * 0 - запрещено
+			 */
+			$key_data['domain_wildcard'] = $row['l_domain_wildcard'];
 
-		/*
-		 * Директория где находится клиент
-		 */
-		$key_data['directory'] = $row['l_directory'];
+			/*
+			 * Айпи адрес сервера
+			 */
+			$key_data['ip'] = $row['l_ip'];
 
-		/*
-		 * Название хоста где находится клиент
-		 */
-		$key_data['server_hostname'] = $row['l_server_hostname'];
+			/*
+			 * Директория где находится клиент
+			 */
+			$key_data['directory'] = $row['l_directory'];
 
-		/*
-		 * Айпи адрес хоста где находится клиент
-		 */
-		$key_data['server_ip'] = $row['l_server_ip'];
+			/*
+			 * Название хоста где находится клиент
+			 */
+			$key_data['server_hostname'] = $row['l_server_hostname'];
 
-		/*
-		 * Статус лицензии
-		 *
-		 * 0 - не активирована
-		 * 1 - лицензия активирована
-		 * 2 - срок истек
-		 * 3 - лицензия переиздана (сделано продление)
-		 */
-		$key_data['status'] = $row['l_status'];
+			/*
+			 * Айпи адрес хоста где находится клиент
+			 */
+			$key_data['server_ip'] = $row['l_server_ip'];
 
-		/*
-		 * Метод проверки лицензионного ключа
-		 */
-		$key_data['method_id'] = $row['l_method_id'];
+			/*
+			 * Статус лицензии
+			 *
+			 * 0 - не активирована
+			 * 1 - лицензия активирована
+			 * 2 - срок истек
+			 * 3 - лицензия переиздана (сделано продление)
+			 */
+			$key_data['status'] = $row['l_status'];
 
-		/*
-		 * Дата истечения срока действия лицензионного ключа в UNIX формате
-		 */
-		$key_data['expires'] = $row['l_expires'];
+			/*
+			 * Метод проверки лицензионного ключа
+			 */
+			$key_data['method_id'] = $row['l_method_id'];
 
-		return $key_data;
+			/*
+			 * Дата истечения срока действия лицензионного ключа в UNIX формате
+			 */
+			$key_data['expires'] = $row['l_expires'];
+
+			return $key_data;
+		}
+
+		return false;
+	}
+
+	/*
+	 * Активация лицензионного ключа
+	 */
+	public function licenseKeyActivate($client_data)
+	{
+		$this->_db->query("UPDATE " . $this->_db_prefix . "_license_keys SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
+
+		return $this->licenseKeyGet($client_data['key']);
+	}
+
+	/*
+	 * Сброс активационных данных у ключа активации по ключу активации
+	 */
+	public function licenseKeyTruncateByKey($license_key)
+	{
+
 	}
 
 	/*
 	 * Получение данных пришедших от клиента
 	 *
-	 * @return array
+	 * @return array|boolean Данные в виде массива в случае успеха, false в случае ошибки
 	 */
 	public function clientDataGet()
 	{
-		$client_data = array();
-
 		/*
 		 * Проверяем наличие пост запроса от клиента
 		 */
 		if ($_POST['license_key'])
 		{
+			$client_data = array();
+
 			/*
 	   		 * Лицензионный ключ активации
 			 */
-			$client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['license_key'])))));
+			$client_data['key'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['license_key'])))));
 
 			/*
 			 * Домен на котором установлен клиент (без www)
 			 */
-			$client_data['domain'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['domain'])))));
+			$client_data['domain'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['domain'])))));
 			$client_data['domain'] = str_replace("www.", "", $client_data['domain']);
 
 			/*
@@ -383,20 +377,21 @@ class ProtectServer {
 			/*
 			 * Директория от root где установлен клиент
 			 */
-			$client_data['directory'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['directory'])))));
+			$client_data['directory'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['directory'])))));
 
 			/*
 			 * Имя хоста где установлен лиент
 			 */
-			$client_data['server_hostname'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['server_hostname'])))));
+			$client_data['server_hostname'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['server_hostname'])))));
 
 			/*
 			 * Айпи адрес сервера где установлен клиент
 			 */
-			$client_data['server_ip'] = $this->db->filter(htmlspecialchars(trim(strip_tags($_POST['server_ip']))));
+			$client_data['server_ip'] = $this->_db->filter(htmlspecialchars(trim(strip_tags($_POST['server_ip']))));
 
+			return $client_data;
 		}
 
-		return $client_data;
+		return false;
 	}
 } 
