@@ -107,7 +107,7 @@ class Protect {
 		 * Можно проверять домен, айпи адрес, имя хоста
 		 */
 		$instance = array();
-
+		// todo: добавить остальные данные (ip, mac, hostname).
 		$instance['domain'] = array(0 => $key_data['domain'], 1 => "www." . $key_data['domain']);
 
 		/*

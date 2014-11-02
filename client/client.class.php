@@ -27,13 +27,6 @@ class Protect
 	public $errors = false;
 
 	/*
-	 * Массив с информацией о лицензии
-	 *
-	 * @var array
-	 */
-	public $license_info = array();
-
-	/*
 	 * Лицензионный ключ активации
 	 *
 	 * @var string
@@ -126,7 +119,7 @@ class Protect
 	 *
 	 * @var integer
 	 */
-	public $local_key_delay_period = 4;
+	public $local_key_delay_period = 7;
 
 	/*
 	 * Новый локальный ключ
@@ -141,9 +134,11 @@ class Protect
 	public $validate_download_access = false;
 
 	/*
-	 * дата релиза продукта в UNIX формате
+	 * дата релиза скрипта в формате DD.MM.YY (21.10.2014)
+	 *
+	 * @var string
 	 */
-	public $release_date = 0;
+	public $release_date = '';
 
 	/*
 	 * Локальный ключ для обработки
@@ -725,7 +720,7 @@ class Protect
 		/*
 		 * Cобираем строку запроса
 		 */
-		$querystring = "param=value&param2=value2&license_key={$this->license_key}&";
+		$querystring = "license_key={$this->license_key}&";
 		$querystring .= $this->build_querystring($this->access_details());
 
 		/*

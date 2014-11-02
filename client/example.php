@@ -41,6 +41,11 @@ $protect->api_server = 'http://site.ru/server.php';
 $protect->license_key = 'WEFS-ERGERG-GRGERG-NGNFGN-SDFSDF';
 
 /*
+ * Указываем дату релиза скрипта
+ */
+$protect->release_date = '03.11.2014';
+
+/*
  * Устанавливаем локализацию статусов и ошибок
  */
 $protect->status_messages = array(
@@ -82,4 +87,5 @@ if($protect->status)
  * Дополнительно можно вывести текстовый статус активации
  */
 echo $protect->errors;
+
 
