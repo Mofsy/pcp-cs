@@ -128,7 +128,7 @@ class Protect {
 		/*
 		 * Уникальный логин клиента на сайте
 		 */
-		$local_key['user_name'] = $key_data['user_name'];
+		$local_key['user_name'] = (string)$key_data['user_name'];
 
 		/*
 		 * Лицензионный ключ

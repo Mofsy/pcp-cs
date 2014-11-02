@@ -562,7 +562,7 @@ class Protect
 		}
 
 		/*
-		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся скачать новый
+		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся получить новый
 		 */
 		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
@@ -571,7 +571,7 @@ class Protect
 				/*
 				 * Если срок истек, удаляем не действительный локальный ключ
 				 */
-				$this->clear_cache_local_key();
+				$this->clear_local_key();
 
 				/*
 				 * запускаем получение нового ключа.
@@ -686,7 +686,7 @@ class Protect
 	/*
 	* Очищаем временный локальный ключ
 	*/
-	public function clear_cache_local_key()
+	public function clear_local_key()
 	{
 		if($this->local_key_storage == 'filesystem')
 		{
@@ -837,7 +837,7 @@ class Protect
 	*/
 	private function access_details()
 	{
-		$access_details=array();
+		$access_details = array();
 
 		// Если функция phpinfo() существует
 		if (function_exists('phpinfo'))
@@ -864,12 +864,10 @@ class Protect
 		$access_details['server_ip'] = ($access_details['server_ip']) ? $access_details['server_ip'] : @gethostbyaddr($access_details['ip']);
 		$access_details['server_ip'] = ($access_details['server_ip']) ? $access_details['server_ip'] : 'Unknown';
 
-		// Last resort, send something in...
 		foreach ($access_details as $key => $value)
 		{
-			$access_details[$key]=($access_details[$key])?$access_details[$key]:'Unknown';
+			$access_details[$key] = ($access_details[$key]) ? $access_details[$key] : 'Unknown';
 		}
-
 
 		return $access_details;
 	}
