@@ -165,8 +165,8 @@ class Protect
 	 */
 	public $status_messages = array(
 		'status_1'                         => 'This license is active.',
-		'status_4'                      => 'Error: This license has been suspended.',
 		'status_2'                        => 'Error: This license has expired.',
+		'status_4'                      => 'Error: This license has been suspended.',
 		'pending'                        => 'Error: This license is pending review.',
 		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
@@ -540,7 +540,7 @@ class Protect
 		/*
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
 		 */
-		if ( (string)$key_data['license_key_string'] != (string)$this->license_key )
+		if ( (string)$key_data['license_key'] != (string)$this->license_key )
 		{
 			return $this->errors = $this->status_messages['license_key_string_mismatch'];
 		}
@@ -558,7 +558,7 @@ class Protect
 		 */
 		if ((string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time())
 		{
-			return $this->errors = $this->status_messages['expired'];
+			return $this->errors = $this->status_messages['status_2'];
 		}
 
 		/*

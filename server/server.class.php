@@ -111,6 +111,11 @@ class Protect {
 		$instance['domain'] = array(0 => $key_data['domain'], 1 => "www." . $key_data['domain']);
 
 		/*
+		 * Данные о том, что следует проверять
+		 */
+		$local_key['instance'] = $instance;
+
+		/*
 		 * Маркер проверки, указывает на то, что надо проверять в данных
 		 */
 		$local_key['enforce'] = $method_data['enforce'];
@@ -118,26 +123,50 @@ class Protect {
 		/*
 		 * Уникальный идентификатор клиента
 		 */
-		$local_key['customer'] = '';
+		$local_key['user_id'] = (integer)$key_data['user_id'];
 
 		/*
 		 * Уникальный логин клиента на сайте
 		 */
-		$local_key['user'] = '';
+		$local_key['user_name'] = $key_data['user_name'];
 
 		/*
 		 * Лицензионный ключ
 		 */
-		$local_key['license_key_string'] = $key_data['key'];
+		$local_key['license_key'] = (string)$key_data['key'];
 
 		/*
-		 * Данные о том, что следует проверять
+		 * Дата начала действия лицензии в Unix-времени
 		 */
-		$key_data['instance'] = $instance;
-
+		$local_key['license_started'] = (integer)$key_data['started'];
 
 		/*
-		 * Кастомные поля, не учитываются
+		 * Дата окончания лицензии в Unix-времени
+		 */
+		$local_key['license_expires'] = $key_data['expires'];
+
+		/*
+		 * Время истечения локального ключа
+		 *
+		 * Формула:
+		 * берем количество дней из метода, умножаем его на количество секунд в сутках и прибавляем к Unix-времени.
+		 */
+		$local_key['local_key_expires'] = ((integer)$method_data['check_period'] * 86400) + time();
+
+		/*
+		 * Статус лицензии
+		 *
+		 * 0 - активна (не использована)
+		 * 1 - активна (использована)
+		 * 2 - срок истек
+		 * 3 - лицензия переиздана (использование обнулено)
+		 * 4 - действие приостановлено
+		 *
+		 */
+		$local_key['status'] = (integer)$key_data['status'];
+
+		/*
+		 * Кастомные поля
 		 */
 		$local_key['custom_fields'] = array();
 
@@ -150,29 +179,6 @@ class Protect {
 		 * Время истечения срока поддержки
 		 */
 		$local_key['support_access_expires'] = 0;
-
-		/*
-		 * Дата окончания лицензии в Unix-времени
-		 */
-		$local_key['license_expires'] = $key_data['license_expires'];
-
-		/*
-		 * Время истечения локального ключа
-		 * берем количество дней из метода, умножаем его на количество секунд в сутках и прибавляем к Unix-времени.
-		 */
-		$local_key['local_key_expires'] = ((integer)$method_data['check_period'] * 86400) + time();
-
-		/*
-		 * Статус лицензии
-		 *
-		 * 0 - не активирована
-		 * 1 - активна (активирована)
-		 * 2 - срок истек
-		 * 3 - лицензия переиздана
-		 * 4 - действие приостановлено
-		 *
-		 */
-		$local_key['status'] = (integer)$key_data['status'];
 
 		/*
 		 * Сериализуем все данные локального ключа
@@ -283,8 +289,9 @@ class Protect {
 			/*
 			 * Разрешено ли использовать на поддоменах
 			 *
-			 * 1 - разрешено
 			 * 0 - запрещено
+			 * 1 - разрешено
+			 * 2 - разрешено включая разные доменные зоны
 			 */
 			$key_data['domain_wildcard'] = $row['l_domain_wildcard'];
 
@@ -324,7 +331,12 @@ class Protect {
 			$key_data['method_id'] = $row['l_method_id'];
 
 			/*
-			 * Дата истечения срока действия лицензионного ключа в UNIX формате
+			 * Дата начала срока действия лицензионного ключа в UNIX формате
+			 */
+			$key_data['started'] = $row['l_started'];
+
+			/*
+			 * Дата окончания срока действия лицензионного ключа в UNIX формате
 			 */
 			$key_data['expires'] = $row['l_expires'];
 
