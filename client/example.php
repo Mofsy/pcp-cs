@@ -33,12 +33,12 @@ $protect->local_key_name = 'license.lic';
 /*
  * Указываем полный путь до сервера лицензий.
  */
-$protect->api_server = 'http://site.ru/server.php';
+$protect->server = 'http://site.ru/server.php';
 
 /*
  * Указываем ключ лицензии, например из конфигурации.
  */
-$protect->license_key = 'WEFS-ERGERG-GRGERG-NGNFGN-SDFSDF';
+$protect->license_key = 'WEFSZ-ERGER-GRGER-NGNFG-SDFSF';
 
 /*
  * Указываем дату релиза скрипта
@@ -50,10 +50,10 @@ $protect->release_date = '03.11.2014';
  */
 $protect->status_messages = array(
 	'status_1'                         => '<span style="color:green;">Активна</span>',
-	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',
-	'status_4'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
 	'status_2'                        => '<span style="color:red;">Ошибка</span>: срок лицензии вышел.',
 	'status_3'                        => '<span style="color:orange;">Внимание</span>: лицензия переиздана. Ожидает повторной активации.',
+	'status_4'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
+	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',
 	'pending'                        => '<span style="color:red;">Ошибка</span>: лицензия ожидает рассмотрения.',
 	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для этой версии скачивание обновлений запрещено. Пожалуйста поставьте более старую версию модуля.',
 	'missing_license_key'            => '<span style="color:red;">Ошибка</span>: лицензионный ключ не указан.',
@@ -84,8 +84,15 @@ if($protect->status)
 }
 
 /*
- * Дополнительно можно вывести текстовый статус активации
+ * Можно вывести текстовый статус лицензии
+ *
+ * NOTE: например в панели скрипта или в лог, что бы знать в каком состоянии находится лицензия.
  */
 echo $protect->errors;
+
+/*
+ * Так же можно вывести имя (логин), на которое выдана лицензия
+ */
+echo $protect->user_name;
 
 

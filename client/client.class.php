@@ -45,7 +45,7 @@ class Protect
 	 *
 	 * @var string
 	 */
-	public $api_server = '';
+	public $server = '';
 
 	/*
 	 * Удаленный порт сервера лицензий
@@ -75,6 +75,16 @@ class Protect
 	 * @var boolean
 	 */
 	private $use_localhost = true;
+
+	/*
+	 * Разрешить использовать текущую версию скрипта после истечении срока лицензии
+	 *
+	 * NOTE: Если истина, то лицензия будет продолжать работать, даже после истечения срока действия ключа активации.
+	 * Лицензия будет работать, только на старых релизах скрипта, на новой версии активация уже будет не действительна.
+	 *
+	 * @var boolean
+	 */
+	public $use_expires = false;
 
 	/*
 	 * Маркер режима хранения ключа
@@ -141,6 +151,13 @@ class Protect
 	public $release_date = '21.10.2014';
 
 	/*
+	 * Имя (логин, например на сайте автора) на кого выдана лицензия
+	 *
+	 * @var string
+	 */
+	public $user_name = '';
+
+	/*
 	 * Локализация статусов лицензии и других сообщений
 	 *
 	 * @var array
@@ -186,20 +203,20 @@ class Protect
 	public function validate()
 	{
 		/*
-		 * Если ключ активации пустой, возвращаем ошибку
-		 */
-		if (!$this->license_key)
-		{
-			return $this->errors = $this->status_messages['missing_license_key'];
-		}
-
-		/*
 		 * Если локальный компьютер и Windows, а так же разрешено использование
 		 */
 		if($this->use_localhost && $this->get_local_ip() && $this->is_windows())
 		{
 			$this->status = true;
 			return $this->errors = $this->status_messages['localhost'];
+		}
+
+		/*
+		 * Если ключ активации пустой, возвращаем ошибку
+		 */
+		if (!$this->license_key)
+		{
+			return $this->errors = $this->status_messages['missing_license_key'];
 		}
 
 		/*
@@ -284,8 +301,8 @@ class Protect
 	/*
 	* Расчитываем максимальное время действия льготного периода
 	*
-	* @param integer $local_key_expires
-	* @param integer $delay
+	* @param integer $local_key_expires Время действия локального ключа в UNIX формате
+	* @param integer $delay Дополнительный срок действия в днях
 	* @return integer
 	*/
 	private function calc_max_delay($local_key_expires, $delay)
@@ -333,7 +350,6 @@ class Protect
 				continue;
 			}
 
-			// log the new attempt, we'll try again next time
 			$local_key .= "\n{$delay}";
 
 			$write_new_key = true;
@@ -536,8 +552,10 @@ class Protect
 
 		/*
 		 * Проверяем срок окончания лицензии, если срок истек, то возвращаем сообщение об ошибке
+		 *
+		 * NOTE:
 		 */
-		if ((string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time())
+		if ($this->use_expires == false && (string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time())
 		{
 			return $this->errors = $this->status_messages['status_2'];
 		}
@@ -545,7 +563,7 @@ class Protect
 		/*
 		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся получить новый
 		 */
-		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		if ($this->use_expires == false && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
 			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
@@ -618,7 +636,7 @@ class Protect
 		}
 
 		/*
-		 * Если конфликты для локального ключа остались, то выдаем ошибку.
+		 * Если конфликты для локального ключа остались, выдаем ошибку.
 		 * Скрипт не имеет права выполняться в данном расположении по указанной лицензии.
 		 */
 		if (!empty($conflicts))
@@ -743,7 +761,7 @@ class Protect
 			// если использовать fsockopen()
 			if ($use == 's')
 			{
-				if ($result = $this->use_fsockopen($this->api_server, $querystring))
+				if ($result = $this->use_fsockopen($this->server, $querystring))
 				{
 					break;
 				}
@@ -752,7 +770,7 @@ class Protect
 			// если использовать curl()
 			if ($use == 'c')
 			{
-				if ($result = $this->use_curl($this->api_server, $querystring))
+				if ($result = $this->use_curl($this->server, $querystring))
 				{
 					break;
 				}
@@ -761,7 +779,7 @@ class Protect
 			// если использовать fopen()
 			if ($use == 'f')
 			{
-				if ($result = $this->use_fopen($this->api_server, $querystring))
+				if ($result = $this->use_fopen($this->server, $querystring))
 				{
 					break;
 				}
