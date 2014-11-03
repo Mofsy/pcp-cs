@@ -134,24 +134,11 @@ class Protect
 	public $validate_download_access = false;
 
 	/*
-	 * дата релиза скрипта в формате DD.MM.YY (21.10.2014)
+	 * Дата релиза скрипта в формате DD.MM.YY
 	 *
 	 * @var string
 	 */
-	public $release_date = '';
-
-	/*
-	 * Локальный ключ для обработки
-	 *
-	 * @var array
-	 */
-	public $local_key_data = array(
-		'download_access_expires' => 0,
-		'license_expires'         => 0,
-		'local_key_expires'       => 0,
-		'status'                  => 'Invalid',
-		'custom_fields'           => array()
-	);
+	public $release_date = '21.10.2014';
 
 	/*
 	 * Локализация статусов лицензии и других сообщений
@@ -530,7 +517,6 @@ class Protect
 		$key_data = unserialize($parts[0]);
 		$instance = $key_data['instance']; unset($key_data['instance']);
 		$enforce = $key_data['enforce']; unset($key_data['enforce']);
-		$this->local_key_data = $key_data;
 
 		/*
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
@@ -655,10 +641,19 @@ class Protect
 		{
 			return $this->errors = $this->status_messages['missing_license_file'] . $path;
 		}
+
 		// проверяем на возможность записи файла лицензии
 		if (!is_writable($path))
 		{
-			return $this->errors = $this->status_messages['license_file_not_writable'] . $path;
+			@chmod($path, 0777);
+			if (!is_writable($path))
+			{
+				@chmod("$path", 0755);
+				if (!is_writable($path))
+				{
+					return $this->errors = $this->status_messages['license_file_not_writable'] . $path;
+				}
+			}
 		}
 
 		// Проверяем на пустоту локального временного ключа
