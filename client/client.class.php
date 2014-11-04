@@ -654,6 +654,12 @@ class Protect
 	*/
 	public function read_local_key()
 	{
+		// проверяем на наличие папок, если нет, создаем
+		if(!is_dir($this->local_key_path))
+		{
+			mkdir($this->local_key_path, 0755, true);
+		}
+
 		// проверяем на существования файла с лицензией
 		if ( !file_exists( $path = "{$this->local_key_path}{$this->local_key_name}" ) )
 		{
