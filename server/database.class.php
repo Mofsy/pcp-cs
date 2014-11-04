@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * PHP code protect
  *
  * @link 		https://github.com/Mofsy/pcp-cs
