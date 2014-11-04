@@ -138,11 +138,6 @@ class Protect
 	public $local_key_last;
 
 	/**
-	 * Период, в течении которого доступно скачивание.
-	 */
-	public $validate_download_access = false;
-
-	/**
 	 * Дата релиза скрипта в формате DD.MM.YY
 	 *
 	 * @var string
@@ -203,6 +198,7 @@ class Protect
 	{
 		/**
 		 * Если локальный компьютер и Windows, а так же разрешено использование
+		 * на локальном компьютере без активации
 		 */
 		if($this->use_localhost && $this->get_local_ip() && $this->is_windows())
 		{
@@ -223,14 +219,14 @@ class Protect
 		 */
 		switch($this->local_key_storage)
 		{
-			/**
+			/*
 			 * Получаем из файла
 			 */
 			case 'filesystem':
 				$local_key = $this->read_local_key();
 				break;
 
-			/**
+			/*
 			 * По умолчанию возвращаем ошибку
 			 */
 			default:
@@ -523,6 +519,10 @@ class Protect
 		{
 			return $this->errors = $this->status_messages['local_key_tampering'];
 		}
+
+		/*
+		 * Уничтожаем секретный ключ
+		 */
 		unset($this->secret_key);
 
 		/**
@@ -559,9 +559,10 @@ class Protect
 		}
 
 		/**
-		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся получить новый
+		 * Проверяем срок истечения локального ключа, если он истек и стоит запрет на использование после истечения
+		 * срока лицензионного ключа, то очищаем ключ и пытаемся получить новый
 		 */
-		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		if ($this->use_expires == false && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
 			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
@@ -578,13 +579,24 @@ class Protect
 		}
 
 		/**
-		 *  Проверяем срок истечения обновлений (на будущее), пока не затрагиваем
+		 * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
+		 * после истечения срока лицензионного ключа,
+		 * todo: реализовать
 		 */
+		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		{
+
+		}
+
+		/**
+		 *  Проверяем срок истечения обновлений (на будущее), пока не затрагиваем
+
 		if ($this->validate_download_access && strtolower($key_data['download_access_expires']) != 'never' && (integer)$key_data['download_access_expires'] < strtotime($this->release_date))
 		{
 			return $this->errors = $this->status_messages['download_access_expired'];
 		}
-
+		*/
+		
 		/**
 		 * Проверяем права на доступ:
 		 *
