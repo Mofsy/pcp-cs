@@ -33,7 +33,7 @@ $protect->local_key_name = 'license.lic';
 /*
  * Указываем полный путь до сервера лицензий.
  */
-$protect->server = 'http://site.ru/server.php';
+$protect->server = 'http://localhost/server/server.php';
 
 /*
  * Указываем ключ лицензии, например из конфигурации.
@@ -60,7 +60,7 @@ $protect->status_messages = array(
 	'unknown_local_key_type'         => '<span style="color:red;">Ошибка</span>: неизвестный тип проверки локального ключа.',
 	'could_not_obtain_local_key'     => '<span style="color:red;">Ошибка</span>: невозможно получить новый локальный ключ.',
 	'maximum_delay_period_expired'   => '<span style="color:red;">Ошибка</span>: льготный период локального ключа истек.',
-	'local_key_tampering'            => '<span style="color:red;">Ошибка</span>: локальный лицензионный ключ поврежден или не валиден.',
+	'local_key_tampering'            => '<span style="color:red;">Ошибка</span>: локальный лицензионный ключ поврежден или не действителен.',
 	'local_key_invalid_for_location' => '<span style="color:red;">Ошибка</span>: локальный ключ не подходит к данному сайту.',
 	'missing_license_file'           => '<span style="color:red;">Ошибка</span>: создайте следующий пустой файл и папки если их нету:<br />',
 	'license_file_not_writable'      => '<span style="color:red;">Ошибка</span>: сделайте для записи следующие пути:<br />',

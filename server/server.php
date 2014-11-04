@@ -16,9 +16,9 @@
  * Конфигурация подключения к базе данных
  */
 $db_host = 'localhost';
-$db_user = 'test';
-$db_pass = 'test';
-$db_name = 'test';
+$db_user = 'root';
+$db_pass = '';
+$db_name = 'pcp';
 $db_prefix = 'pcp';
 
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'server.class.php');

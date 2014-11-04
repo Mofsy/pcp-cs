@@ -60,6 +60,7 @@ class Protect {
 			 */
 			if($key_data = $this->licenseKeyGet($client_data['key']))
 			{
+
 				/*
 			     * Если лицензионный ключ не активирован или переиздан
 				 */
@@ -257,7 +258,7 @@ class Protect {
 		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
 		$row = $this->_db->get_row($result);
 
-		if(count($row) == 1)
+		if(count($row) > 0)
 		{
 			$key_data = array();
 
@@ -385,7 +386,7 @@ class Protect {
 		/*
 		 * Проверяем наличие пост запроса от клиента
 		 */
-		if ($_POST['license_key'])
+		if (isset($_POST['license_key']))
 		{
 			$client_data = array();
 

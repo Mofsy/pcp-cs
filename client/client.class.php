@@ -74,7 +74,7 @@ class Protect
 	 *
 	 * @var boolean
 	 */
-	private $use_localhost = true;
+	private $use_localhost = false;
 
 	/*
 	 * Разрешить использовать текущую версию скрипта после истечении срока лицензии
@@ -563,7 +563,7 @@ class Protect
 		/*
 		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся получить новый
 		 */
-		if ($this->use_expires == false && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
 			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
@@ -594,7 +594,7 @@ class Protect
 		 * - Проверяем домен. Домен проверяется сразу на поддомены, если адрес домена с www.
 		 * - Проверяем IP адрес сервера.
 		 * - Проверяем имя сервера.
-		 *
+		 * TODO: добавить проверку по MAC адресу
 		 */
 		$conflicts = array();
 		$access_details = $this->access_details();
@@ -644,6 +644,8 @@ class Protect
 			return $this->errors = $this->status_messages['local_key_invalid_for_location'];
 		}
 
+		$this->errors = $this->status_messages['status_1'];
+
 		return $this->status = true;
 	}
 
@@ -657,7 +659,17 @@ class Protect
 		// проверяем на существования файла с лицензией
 		if ( !file_exists( $path = "{$this->local_key_path}{$this->local_key_name}" ) )
 		{
-			return $this->errors = $this->status_messages['missing_license_file'] . $path;
+			// пробуем создать пустой файл
+			$f = @fopen($path, 'w');
+			if (!$f)
+			{
+				return $this->errors = $this->status_messages['missing_license_file'] . $path;
+			}
+			else
+			{
+				fwrite($f, '');
+				fclose($f);
+			}
 		}
 
 		// проверяем на возможность записи файла лицензии
