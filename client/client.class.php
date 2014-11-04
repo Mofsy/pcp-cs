@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * PHP code protect
  *
  * @link 		https://github.com/Mofsy/pcp-cs
@@ -11,56 +11,56 @@ namespace Mofsy\License\Client;
 
 class Protect
 {
-	/*
+	/**
  	 * Статус лицензии
 	 *
  	 * @var bool $status true если активна, false если не активна
  	 */
 	public $status = false;
 
-	/*
+	/**
 	 * Ошибки, возникшие при валидации
 	 *
 	 * @var bool|string
 	 */
 	public $errors = false;
 
-	/*
+	/**
 	 * Лицензионный ключ активации
 	 *
 	 * @var string
 	 */
 	public $license_key = '';
 
-	/*
+	/**
 	 * Секретный локальный ключ
 	 *
 	 * @var string
 	 */
 	public $secret_key = 'fdfblhlLgnJDKJklblngkk6krtkghm565678kl78klkUUHtvdfdoghphj';
 
-	/*
+	/**
 	 * Полный адрес сервера, для проверки лицензии и выпуска новой.
 	 *
 	 * @var string
 	 */
 	public $server = '';
 
-	/*
+	/**
 	 * Удаленный порт сервера лицензий
 	 *
 	 * @var integer
 	 */
 	public $remote_port = 80;
 
-	/*
+	/**
 	 * Период ожидания ответа от сервера лицензий
 	 *
 	 * @var integer
 	 */
 	public $remote_timeout = 20;
 
-	/*
+	/**
 	 * User-agent клиента, который
 	 * посылается вместе с запросом на сервер лицензий
 	 *
@@ -68,14 +68,14 @@ class Protect
 	 */
 	public $local_ua = 'PHP code protect (http://site.ru)';
 
-	/*
+	/**
 	 * Маркер использования на локальной системе с Windows без активации
 	 *
 	 * @var boolean
 	 */
 	private $use_localhost = false;
 
-	/*
+	/**
 	 * Разрешить использовать текущую версию скрипта после истечении срока лицензии
 	 *
 	 * NOTE: Если истина, то лицензия будет продолжать работать, даже после истечения срока действия ключа активации.
@@ -85,7 +85,7 @@ class Protect
 	 */
 	public $use_expires = true;
 
-	/*
+	/**
 	 * Маркер режима хранения ключа
 	 *
 	 * filesystem - хранить в файле
@@ -96,21 +96,21 @@ class Protect
 	 */
 	public $local_key_storage = 'filesystem';
 
-	/*
+	/**
 	 * Полный путь до локального файла с временной лицензией
 	 *
 	 * @var string
 	 */
 	public $local_key_path = './';
 
-	/*
+	/**
 	 * Название файла с временной лицензией
 	 *
 	 * @var string
 	 */
 	public $local_key_name = 'license.lic';
 
-	/*
+	/**
 	 * Сортировка методов запроса к серверу лицензий.
 	 *
 	 * Доступны:
@@ -122,7 +122,7 @@ class Protect
 	 */
 	public $local_key_transport_order = 'scf';
 
-	/*
+	/**
 	 * Период после истечения времени действия локального ключа, после которого лицензия активна.
 	 * нужно для не отключения скрипта, если сервер лицензий временно не доступен.
 	 *
@@ -130,33 +130,33 @@ class Protect
 	 */
 	public $local_key_delay_period = 7;
 
-	/*
+	/**
 	 * Новый локальный ключ
 	 *
 	 * @var integer
 	 */
 	public $local_key_last;
 
-	/*
+	/**
 	 * Период, в течении которого доступно скачивание.
 	 */
 	public $validate_download_access = false;
 
-	/*
+	/**
 	 * Дата релиза скрипта в формате DD.MM.YY
 	 *
 	 * @var string
 	 */
 	public $release_date = '21.10.2014';
 
-	/*
+	/**
 	 * Имя (логин, например на сайте автора) на кого выдана лицензия
 	 *
 	 * @var string
 	 */
 	public $user_name = '';
 
-	/*
+	/**
 	 * Локализация статусов лицензии и других сообщений
 	 *
 	 * @var array
@@ -180,13 +180,13 @@ class Protect
 		'localhost'                      => 'This license is active (localhost).'
 	);
 
-	/*
+	/**
 	 * Маркер не удачного получения нового локального ключа с сервера
 	 */
 	private $trigger_delay_period;
 
 
-	/*
+	/**
 	 * Конструктор класса
 	 */
 	public function __construct()
@@ -194,14 +194,14 @@ class Protect
 
 	}
 
-	/*
+	/**
 	* Валидация
 	*
 	* @return string
 	*/
 	public function validate()
 	{
-		/*
+		/**
 		 * Если локальный компьютер и Windows, а так же разрешено использование
 		 */
 		if($this->use_localhost && $this->get_local_ip() && $this->is_windows())
@@ -210,7 +210,7 @@ class Protect
 			return $this->errors = $this->status_messages['localhost'];
 		}
 
-		/*
+		/**
 		 * Если ключ активации пустой, возвращаем ошибку
 		 */
 		if (!$this->license_key)
@@ -218,46 +218,46 @@ class Protect
 			return $this->errors = $this->status_messages['missing_license_key'];
 		}
 
-		/*
+		/**
 		 * Получаем локальный ключ из локального хранилища
 		 */
 		switch($this->local_key_storage)
 		{
-			/*
+			/**
 			 * Получаем из файла
 			 */
 			case 'filesystem':
 				$local_key = $this->read_local_key();
 				break;
 
-			/*
+			/**
 			 * По умолчанию возвращаем ошибку
 			 */
 			default:
 				return $this->errors = $this->status_messages['missing_license_key'];
 		}
 
-		/*
+		/**
 		 * присваиваем сообщение об ошибке, для случая, если не удастся получить новый локальный ключ с сервера
 		 */
 		$this->trigger_delay_period = $this->status_messages['could_not_obtain_local_key'];
 
-		/*
+		/**
 		 * Если не возможно получить новый локальный ключ с сервера, но есть льготный период
 		 */
 		if ( $this->errors == $this->trigger_delay_period && $this->local_key_delay_period )
 		{
-			/*
+			/**
 			 * Получаем льготный период
 			 */
 			$delay = $this->process_delay_period($this->local_key_last);
 
-			/*
+			/**
 			 * Если льготный период имеется
 			 */
 			if ($delay['write'])
 			{
-				/*
+				/**
 				 * Записываем новый ключ с учетом льготного периода
 				 */
 				if ($this->local_key_storage == 'filesystem')
@@ -266,7 +266,7 @@ class Protect
 				}
 			}
 
-			/*
+			/**
 			 * Если все льготные периоды использованы
 			 */
 			if ($delay['errors'])
@@ -274,7 +274,7 @@ class Protect
 				return $this->errors = $delay['errors'];
 			}
 
-			/*
+			/**
 			 * Если льготные периоды не использованы
 			 */
 			$this->errors = false;
@@ -282,7 +282,7 @@ class Protect
 			return $this;
 		}
 
-		/*
+		/**
 		 * Проверяем, нет ли ошибок, если есть то возвращаем.
 		 */
 		if ($this->errors)
@@ -290,13 +290,13 @@ class Protect
 			return $this->errors;
 		}
 
-		/*
+		/**
 		 * Проверяем локальный ключ
 		 */
 		return $this->validate_local_key($local_key);
 	}
 
-	/*
+	/**
 	* Расчитываем максимальное время действия льготного периода
 	*
 	* @param integer $local_key_expires Время действия локального ключа в UNIX формате
@@ -308,7 +308,7 @@ class Protect
 		return ( (integer)$local_key_expires + ( (integer)$delay * 86400 ) );
 	}
 
-	/*
+	/**
 	* Обработка льготного периода для локального ключа
 	*
 	* @param string $local_key
@@ -316,20 +316,20 @@ class Protect
 	*/
 	private function process_delay_period($local_key)
 	{
-		/*
+		/**
 		 * Убираем гадости
 		 */
 		$local_key_src = $this->decode_key($local_key);
 		$parts = $this->split_key($local_key_src);
 		$key_data = unserialize($parts[0]);
 
-		/*
+		/**
 		 * Получаем дату истечения локального ключа
 		 */
 		$local_key_expires = (integer)$key_data['local_key_expires'];
 		unset($parts, $key_data);
 
-		/*
+		/**
 		 * Правила льготного периода
 		 */
 		$write_new_key = false;
@@ -353,7 +353,7 @@ class Protect
 			$write_new_key = true;
 		}
 
-		/*
+		/**
 		 * Проверяем максимальный лимит льготного периода
 		 */
 		if ( time() > $this->calc_max_delay( $local_key_expires, array_pop($local_key_delay_period) ) )
@@ -364,7 +364,7 @@ class Protect
 		return array('write' => $write_new_key, 'local_key' => $local_key, 'errors' => false);
 	}
 
-	/*
+	/**
 	* Проверка на принадлежность к льготному периоду
 	*
 	* @param string $local_key
@@ -382,7 +382,7 @@ class Protect
 		return (integer)($this->calc_max_delay($local_key_expires, array_pop(explode("\n", $delay[1]))) - time());
 	}
 
-	/*
+	/**
 	* Декодируем локальный ключ.
 	*
 	* @param string $local_key
@@ -393,7 +393,7 @@ class Protect
 		return base64_decode(str_replace("\n", '', urldecode($local_key)));
 	}
 
-	/*
+	/**
 	* Разбиваем локальный ключ на части
 	*
 	* @param string $local_key
@@ -405,7 +405,7 @@ class Protect
 		return explode($token, $local_key);
 	}
 
-	/*
+	/**
 	* Проверяем дейтвия ключа по параметрам доступа
 	*
 	* @param string $key
@@ -417,7 +417,7 @@ class Protect
 		return in_array($key, (array)$valid_accesses);
 	}
 
-	/*
+	/**
 	* Получаем массив возможных IP адресов
 	*
 	* @param string $key
@@ -440,7 +440,7 @@ class Protect
 		return $ip_range;
 	}
 
-	/*
+	/**
 	* Получаем доменное имя с учетом wildcard
 	*
 	* @param string $key
@@ -452,7 +452,7 @@ class Protect
 		return '*.' . str_replace('www.', '', $key);
 	}
 
-	/*
+	/**
 	* Получаем server hostname с учетом wildcard
 	*
 	* @param string $key
@@ -469,7 +469,7 @@ class Protect
 		return '*.' . implode('.', $hostname);
 	}
 
-	/*
+	/**
 	* Получаем определенный набор деталей доступа из экземпляра
 	*
 	* @param array $instances
@@ -490,7 +490,7 @@ class Protect
 		return array();
 	}
 
-	/*
+	/**
 	* Валидация локального ключа
 	*
 	* @param string $local_key
@@ -498,17 +498,17 @@ class Protect
 	*/
 	private function validate_local_key($local_key)
 	{
-		/*
+		/**
 		 * Преобразовываем локальный ключ в удобную форму
 		 */
 		$local_key_src = $this->decode_key($local_key);
 
-		/*
+		/**
 		 * Разделяем локальный ключ на партии
 		 */
 		$parts = $this->split_key($local_key_src);
 
-		/*
+		/**
 		 * Проверяем на наличие всех частей локального ключа, если нет, то мы не можем проверять дальше
 		 */
 		if (!isset($parts[1]))
@@ -516,7 +516,7 @@ class Protect
 			return $this->errors = $this->status_messages['local_key_tampering'];
 		}
 
-		/*
+		/**
 		 * Проверяем секретный ключ на подделку. Если не совпадают, то возвратим ошибку.
 		 */
 		if ( md5((string)$this->secret_key . (string)$parts[0]) != $parts[1] )
@@ -525,14 +525,14 @@ class Protect
 		}
 		unset($this->secret_key);
 
-		/*
+		/**
 		 * Преобразовываем данные локального ключа в удобную форму
 		 */
 		$key_data = unserialize($parts[0]);
 		$instance = $key_data['instance']; unset($key_data['instance']);
 		$enforce = $key_data['enforce']; unset($key_data['enforce']);
 
-		/*
+		/**
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
 		 */
 		if ( (string)$key_data['license_key'] != (string)$this->license_key )
@@ -540,7 +540,7 @@ class Protect
 			return $this->errors = $this->status_messages['license_key_string_mismatch'];
 		}
 
-		/*
+		/**
 		 * Проверяем статус лицензии, если она не активна и срок не истек, то возвращаем ошибку
 		 */
 		if ( (integer)$key_data['status'] != 1 && (integer)$key_data['status'] != 2 )
@@ -548,7 +548,7 @@ class Protect
 			return $this->errors = $this->status_messages['status_' . $key_data['status']];
 		}
 
-		/*
+		/**
 		 * Проверяем срок окончания лицензии
 		 *
 		 * NOTE: если срок ключа активации истек и стоит запрет на использование после истечение срока, выдаем ошибку.
@@ -558,26 +558,26 @@ class Protect
 			return $this->errors = $this->status_messages['status_2'];
 		}
 
-		/*
+		/**
 		 * Проверяем срок истечения локального ключа, если он истек, то очищаем ключ и пытаемся получить новый
 		 */
 		if ( (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
 			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
-				/*
+				/**
 				 * Если срок истек, удаляем не действительный локальный ключ
 				 */
 				$this->clear_local_key();
 
-				/*
+				/**
 				 * запускаем получение нового ключа.
 				 */
 				return $this->validate();
 			}
 		}
 
-		/*
+		/**
 		 *  Проверяем срок истечения обновлений (на будущее), пока не затрагиваем
 		 */
 		if ($this->validate_download_access && strtolower($key_data['download_access_expires']) != 'never' && (integer)$key_data['download_access_expires'] < strtotime($this->release_date))
@@ -585,7 +585,7 @@ class Protect
 			return $this->errors = $this->status_messages['download_access_expired'];
 		}
 
-		/*
+		/**
 		 * Проверяем права на доступ:
 		 *
 		 * - Запуск скрипта для текущего расположения.
@@ -633,7 +633,7 @@ class Protect
 			}
 		}
 
-		/*
+		/**
 		 * Если конфликты для локального ключа остались, выдаем ошибку.
 		 * Скрипт не имеет права выполняться в данном расположении по указанной лицензии.
 		 */
@@ -647,7 +647,7 @@ class Protect
 		return $this->status = true;
 	}
 
-	/*
+	/**
 	* Чтение локального временного лицензионного ключа из файла.
 	*
 	* @return string
@@ -707,7 +707,7 @@ class Protect
 		return $this->local_key_last = $local_key;
 	}
 
-	/*
+	/**
 	* Очищаем временный локальный ключ
 	*/
 	public function clear_local_key()
@@ -722,7 +722,7 @@ class Protect
 		}
 	}
 
-	/*
+	/**
 	* Записываем локальный ключ в файл
 	*
 	* @param string $local_key
@@ -739,20 +739,20 @@ class Protect
 		return true;
 	}
 
-	/*
+	/**
 	* Запрос к API сервера лицензий для получения нового локального ключа
 	*
 	* @return string|false string local key при успехе; boolean false при ошибке.
 	*/
 	private function fetch_new_local_key()
 	{
-		/*
+		/**
 		 * Cобираем строку запроса
 		 */
 		$querystring = "license_key={$this->license_key}&";
 		$querystring .= $this->build_querystring($this->access_details());
 
-		/*
+		/**
 		 * Проверяем наличие ошибок при получении деталей запроса ($this->access_details)
 		 */
 		if ($this->errors)
@@ -760,12 +760,12 @@ class Protect
 			return false;
 		}
 
-		/*
+		/**
 		 *  Получаем приоритет методов запроса.
 		 */
 		$priority = $this->local_key_transport_order;
 
-		/*
+		/**
 		 * Пробуем получать локальный ключ согласно сорировке методов запроса до успеха
 		 */
 		$result = false;
@@ -804,7 +804,7 @@ class Protect
 			$priority = substr($priority, 1);
 		}
 
-		/*
+		/**
 		 * Если не удалось выполнить запрос всеми методами,
 		 * выдаем ошибку получения локального ключа
 		 */
@@ -814,7 +814,7 @@ class Protect
 			return false;
 		}
 
-		/*
+		/**
 		 * Если результат запроса вернул ошибку ключа
 		 * То выдаем ошибку + можно заменить Error на ошибку с сервера.
 		 */
@@ -824,7 +824,7 @@ class Protect
 			return false;
 		}
 
-		/*
+		/**
 		 * Если результат запроса вернул ошибку (например сервер недоступен)
 		 */
 		if (substr($result, 0, 5) == 'Error')
@@ -836,7 +836,7 @@ class Protect
 		return $result;
 	}
 
-	/*
+	/**
 	* Конвертация массива в строку запроса в виде key / value пар
 	*
 	* @param array $array
@@ -854,7 +854,7 @@ class Protect
 		return $buffer;
 	}
 
-	/*
+	/**
 	* Собираем массив с деталями доступа
 	*
 	* @return array
@@ -896,7 +896,7 @@ class Protect
 		return $access_details;
 	}
 
-	/*
+	/**
 	* Получаем путь до директории скрипта
 	*
 	* @return string|boolean string при успехе; boolean при ошибке
@@ -924,7 +924,7 @@ class Protect
 		return false;
 	}
 
-	/*
+	/**
 	* Получаем айпи адрес сервера
 	*
 	* @return string|boolean string при успехе; boolean при ошибке
@@ -941,7 +941,7 @@ class Protect
 		return false;
 	}
 
-	/*
+	/**
 	* Получаем детали доступа используя phpinfo()
 	*
 	* @param array $all
@@ -975,7 +975,7 @@ class Protect
 		return $all;
 	}
 
-	/*
+	/**
 	* Отправка запросов на API сервера лицензий с используя fsockopen
 	*
 	* @param string $url
@@ -1024,7 +1024,7 @@ class Protect
 		return $result[1];
 	}
 
-	/*
+	/**
 	* Отправка запросов на API сервера лицензий с используя cURL
 	*
 	* @param string $url
@@ -1067,7 +1067,7 @@ class Protect
 		return $result;
 	}
 
-	/*
+	/**
 	* Отправка запросов на API сервера лицензий с используя fopen оболочки file_get_contents()
 	*
 	* @param string $url
@@ -1081,7 +1081,7 @@ class Protect
 		return @file_get_contents("{$url}?{$querystring}");
 	}
 
-	/*
+	/**
 	* Определяем Windows систему
 	*
 	* @return boolean
@@ -1091,7 +1091,7 @@ class Protect
 		return (strtolower(substr(php_uname(), 0, 7)) == 'windows');
 	}
 
-	/*
+	/**
 	* Проверяем на локальность сервера
 	*
 	* @return bool
