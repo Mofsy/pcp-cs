@@ -9,7 +9,6 @@
 
 namespace Mofsy\License\Server;
 
-
 class Db
 {
 	public $id = false;

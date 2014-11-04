@@ -7,11 +7,6 @@
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
-@error_reporting ( E_ALL ^ E_WARNING ^ E_NOTICE );
-@ini_set ( 'display_errors', true );
-@ini_set ( 'html_errors', false );
-@ini_set ( 'error_reporting', E_ALL ^ E_WARNING ^ E_NOTICE );
-
 include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'client.class.php');
 
 /*
@@ -26,7 +21,7 @@ $protect = new Mofsy\License\Client\Protect();
 $protect->local_key_path = './';
 
 /*
- * Указываем название файла в котором будет хранитья локальный ключ.
+ * Указываем название файла в котором будет храниться локальный ключ.
  */
 $protect->local_key_name = 'license.lic';
 
@@ -50,7 +45,7 @@ $protect->release_date = '03.11.2014';
  */
 $protect->status_messages = array(
 	'status_1'                         => '<span style="color:green;">Активна</span>',
-	'status_2'                        => '<span style="color:red;">Ошибка</span>: срок лицензии вышел.',
+	'status_2'                        => '<span style="color:darkblue;">Внимание</span>: срок действия лицензии закончился.',
 	'status_3'                        => '<span style="color:orange;">Внимание</span>: лицензия переиздана. Ожидает повторной активации.',
 	'status_4'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
 	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',

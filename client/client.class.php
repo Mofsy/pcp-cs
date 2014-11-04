@@ -9,7 +9,6 @@
 
 namespace Mofsy\License\Client;
 
-
 class Protect
 {
 	/*
@@ -84,7 +83,7 @@ class Protect
 	 *
 	 * @var boolean
 	 */
-	public $use_expires = false;
+	public $use_expires = true;
 
 	/*
 	 * Маркер режима хранения ключа
@@ -244,8 +243,7 @@ class Protect
 		$this->trigger_delay_period = $this->status_messages['could_not_obtain_local_key'];
 
 		/*
-		 * Срок действия локального ключа истек и не возможно получить новый локальный ключ,
-		 * но есть период когда он дополнительно действует.
+		 * Если не возможно получить новый локальный ключ с сервера, но есть льготный период
 		 */
 		if ( $this->errors == $this->trigger_delay_period && $this->local_key_delay_period )
 		{
@@ -501,17 +499,17 @@ class Protect
 	private function validate_local_key($local_key)
 	{
 		/*
-		 * Преобразовываем лицензию в удобную форму
+		 * Преобразовываем локальный ключ в удобную форму
 		 */
 		$local_key_src = $this->decode_key($local_key);
 
 		/*
-		 * Разделяем на партии
+		 * Разделяем локальный ключ на партии
 		 */
 		$parts = $this->split_key($local_key_src);
 
 		/*
-		 * Проверяем на наличие всех частей, если нет, то мы не можем проверять дальше
+		 * Проверяем на наличие всех частей локального ключа, если нет, то мы не можем проверять дальше
 		 */
 		if (!isset($parts[1]))
 		{
@@ -543,7 +541,7 @@ class Protect
 		}
 
 		/*
-		 * проверяем статус лицензии, если она не активна и срок не истек, то возвращаем ошибку
+		 * Проверяем статус лицензии, если она не активна и срок не истек, то возвращаем ошибку
 		 */
 		if ( (integer)$key_data['status'] != 1 && (integer)$key_data['status'] != 2 )
 		{
@@ -551,9 +549,9 @@ class Protect
 		}
 
 		/*
-		 * Проверяем срок окончания лицензии, если срок истек, то возвращаем сообщение об ошибке
+		 * Проверяем срок окончания лицензии
 		 *
-		 * NOTE:
+		 * NOTE: если срок ключа активации истек и стоит запрет на использование после истечение срока, выдаем ошибку.
 		 */
 		if ($this->use_expires == false && (string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time())
 		{
