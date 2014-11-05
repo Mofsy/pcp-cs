@@ -157,9 +157,9 @@ class Protect
 	 * @var array
 	 */
 	public $status_messages = array(
-		'status_1'                         => 'This license is active.',
-		'status_2'                        => 'Error: This license has expired.',
-		'status_4'                      => 'Error: This license has been suspended.',
+		'status_1'                       => 'This license is active.',
+		'status_2'                       => 'Error: This license has expired.',
+		'status_4'                       => 'Error: This license has been suspended.',
 		'pending'                        => 'Error: This license is pending review.',
 		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
@@ -531,6 +531,11 @@ class Protect
 		$key_data = unserialize($parts[0]);
 		$instance = $key_data['instance']; unset($key_data['instance']);
 		$enforce = $key_data['enforce']; unset($key_data['enforce']);
+
+		/*
+		 * Присваиваем имя на кого была выдана лицензия свойству класса
+		 */
+		$this->user_name = $key_data['user_name'];
 
 		/**
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
