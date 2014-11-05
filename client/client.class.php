@@ -595,7 +595,7 @@ class Protect
 		 * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
 		 * после истечения срока лицензионного ключа.
 		 */
-		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() && (integer)$key_data['license_expires'] > (integer)$key_data['local_key_expires'] + 604800 )
 		{
 			/*
 			 * Если имеется доступный льготный период
