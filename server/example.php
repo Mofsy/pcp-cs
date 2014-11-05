@@ -10,6 +10,15 @@
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'server.class.php');
 
 /**
+ * Конфигурация подключения к базе данных
+ */
+$db_host = 'localhost';
+$db_user = 'root';
+$db_pass = '';
+$db_name = 'pcp';
+$db_prefix = 'pcp';
+
+/**
  * Создаем экземпляр класса сервера
  */
 $server = new Mofsy\License\Server\Protect($db_host, $db_user, $db_pass, $db_name, $db_prefix);
@@ -23,7 +32,7 @@ $method_data = $server->licenseKeyMethodCreate('Название метода', 
 /**
  * Создание нового лицензионного ключа активации
  */
-$key_data = $server->licenseKeyCreate(234234234234, 1);
+$key_data = $server->licenseKeyCreate(234234234234, 1, 0);
 
 
 /**

@@ -24,7 +24,6 @@ AUTO_INCREMENT=0;
 CREATE TABLE `pcp_license_methods` (
 	`id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Идентификатор метода',
 	`name` TEXT NOT NULL COMMENT 'Название метода',
-	`key_pref` VARCHAR(50) NOT NULL COMMENT 'Префикс ключа',
 	`secret_key` TEXT NOT NULL COMMENT 'Секретный ключ',
 	`check_period` INT(11) NOT NULL COMMENT 'Период проверки в днях',
 	`enforce` TEXT NOT NULL COMMENT 'Что проверять',
@@ -35,7 +34,7 @@ ENGINE=MyISAM
 AUTO_INCREMENT=0;
 
 CREATE TABLE `pcp_license_logs` (
-	`id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Идентификатор лицензии',
+	`id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Идентификатор лога',
 	`date` INT(11) NOT NULL COMMENT 'Дата действия',
 	`status` TINYINT(1) NOT NULL COMMENT 'Статус действия, 0 - не активирована, 1 - активирована, 2 - срок истек, 3 - лицензия переиздана',
 	`l_status` VARCHAR(150) NOT NULL COMMENT 'Текстовый статус лицензии при проверке',

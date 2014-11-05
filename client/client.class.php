@@ -123,8 +123,7 @@ class Protect
 	public $local_key_transport_order = 'scf';
 
 	/**
-	 * Период после истечения времени действия локального ключа, после которого лицензия активна.
-	 * нужно для не отключения скрипта, если сервер лицензий временно не доступен.
+	 * Период после истечения времени действия локального ключа, после которого лицензия дополнительно дейтвует по времени.
 	 *
 	 * @var integer
 	 */
@@ -159,9 +158,10 @@ class Protect
 	public $status_messages = array(
 		'status_1'                       => 'This license is active.',
 		'status_2'                       => 'Error: This license has expired.',
+		'status_3'                       => 'License republished. Awaiting reactivation.',
 		'status_4'                       => 'Error: This license has been suspended.',
 		'pending'                        => 'Error: This license is pending review.',
-		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade or contact support for more information.',
+		'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade software or contact support for more information.',
 		'missing_license_key'            => 'Error: The license key variable is empty.',
 		'could_not_obtain_local_key'     => 'Error: I could not obtain a new local license key.',
 		'maximum_delay_period_expired'   => 'Error: The maximum local license key delay period has expired.',
@@ -888,7 +888,7 @@ class Protect
 	}
 
 	/**
-	* Собираем массив с деталями доступа
+	* Собираем массив с информацией окружения
 	*
 	* @return array
 	*/

@@ -52,7 +52,6 @@ $protect->status_messages = array(
 	'pending'                        => '<span style="color:red;">Ошибка</span>: лицензия ожидает рассмотрения.',
 	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для установленной версии. Пожалуйста поставьте более старую версию продукта.',
 	'missing_license_key'            => '<span style="color:red;">Ошибка</span>: лицензионный ключ не указан.',
-	'unknown_local_key_type'         => '<span style="color:red;">Ошибка</span>: неизвестный тип проверки локального ключа.',
 	'could_not_obtain_local_key'     => '<span style="color:red;">Ошибка</span>: невозможно получить новый локальный ключ.',
 	'maximum_delay_period_expired'   => '<span style="color:red;">Ошибка</span>: льготный период локального ключа истек.',
 	'local_key_tampering'            => '<span style="color:red;">Ошибка</span>: локальный лицензионный ключ поврежден или не действителен.',
@@ -63,7 +62,6 @@ $protect->status_messages = array(
 	'could_not_save_local_key'       => '<span style="color:red;">Ошибка</span>: не возможно записать новый локальный ключ.',
 	'license_key_string_mismatch'    => '<span style="color:red;">Ошибка</span>: локальный ключ не действителен для указанной лицензии.',
 );
-
 
 /**
  * Запускаем валидацию
@@ -88,6 +86,6 @@ echo $protect->errors;
 /**
  * Так же можно вывести имя (логин), на которое выдана лицензия
  */
-echo $protect->user_name;
+echo '<br />' . $protect->user_name;
 
 

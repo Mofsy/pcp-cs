@@ -58,8 +58,7 @@ class Protect {
 			 */
 			if($key_data = $this->licenseKeyGet($client_data['key']))
 			{
-
-				/**
+				/*
 			     * Если лицензионный ключ не активирован или переиздан, обновляем данные клиента (домен, ip, hostname, mac)
 				 */
 				if ($key_data['status'] == 0 || $key_data['status'] == 3)
@@ -67,17 +66,17 @@ class Protect {
 					$key_data = $this->licenseKeyActivate($client_data);
 				}
 
-				/**
+				/*
 				 * Запрашиваем все необходимое о методе из базы данных по полученному ID
 				 */
 				$method_data = $this->licenseKeyMethodGet($key_data['method_id']);
 
-				/**
+				/*
 				 * Создаем локальный ключ
 				 */
 				$local_key = $this->localKeyCreate($key_data, $method_data);
 
-				/**
+				/*
 				 * Скармливаем клиенту локальный ключ
 				 */
 				die($local_key);
@@ -96,6 +95,8 @@ class Protect {
 	 *
 	 * @param array $key_data Информация о лицензии
 	 * @param array $method_data Информация о методе проверки лицензионного ключа
+	 *
+	 * @return string
 	 */
 
 	public function localKeyCreate($key_data, $method_data)
@@ -217,10 +218,13 @@ class Protect {
 	/**
 	 * Добавление нового ключа активации в базу данных
 	 *
-	 * todo доработать метод
+	 * @param integer|string $expires Срок окончания лицензии в Unix формате; Либо never при вечной лицензии.
+	 * @param integer $method Идентификатор метода проверки лицензионного ключа
+	 * @param integer $status Статус лицензионного ключа
+	 *
 	 * @return array Информация о вновь созданном ключе
 	 */
-	public function licenseKeyCreate($expires, $method)
+	public function licenseKeyCreate($expires, $method, $status = 0)
 	{
 		$new_key_data = array();
 
@@ -233,8 +237,7 @@ class Protect {
 		// идентификатор метода проверки ключа
 		$new_key_data['method'] = $method;
 
-
-		$this->_db->query( "INSERT INTO " . $this->_db_prefix . "_license_keys SET `l_status` = '0', `l_started` = '{$new_key_data['started']}', `l_expires` = '$expires', `l_key` = '{$new_key_data['key']}', `l_method_id`  = '$method'" );
+		$this->_db->query( "INSERT INTO " . $this->_db_prefix . "_license_keys SET `l_status` = '$status', `l_started` = '{$new_key_data['started']}', `l_expires` = '$expires', `l_key` = '{$new_key_data['key']}', `l_method_id`  = '$method'" );
 
 		$new_key_data['id'] = $this->_db->insert_id();
 
@@ -244,7 +247,7 @@ class Protect {
 	/**
 	 * Добавление нового метода проверки ключа активации
 	 *
-	 * @return array Информация о вновь созданном методе
+	 * @return array|boolean Информация о вновь созданном методе при успехе; false при ошибке;
 	 */
 	public function licenseKeyMethodCreate($name, $secret_key, $check_period, $enforce)
 	{
@@ -255,6 +258,13 @@ class Protect {
 
 		// Секретный ключ метода
 		$new_method_data['secret_key'] = (string)$secret_key;
+
+		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_methods WHERE secret_key = '{$new_method_data['secret_key']}'");
+		$row = $this->_db->get_row($result);
+		if(count($row) > 0)
+		{
+			return false;
+		}
 
 		// Период проверки локального ключа в днях
 		$new_method_data['check_period'] = (integer)$check_period;
@@ -303,6 +313,8 @@ class Protect {
 
 	/**
 	 * Получение всей информации о лицензионном ключе по ключу
+	 *
+	 * @param string $key Лицензионный ключ активации
 	 *
 	 * @return array|boolean Массив с информацией о ключе, либо false при отсутствие ключа
 	 */
@@ -500,5 +512,13 @@ class Protect {
 		}
 
 		return false;
+	}
+
+	/*
+	 * Обновление времени обращения к лицензии
+	 */
+	public function licenseKeyCheckLastUpdate()
+	{
+
 	}
 } 
