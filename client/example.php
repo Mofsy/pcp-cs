@@ -44,13 +44,13 @@ $protect->release_date = '03.11.2014';
  * Устанавливаем локализацию статусов и ошибок
  */
 $protect->status_messages = array(
-	'status_1'                         => '<span style="color:green;">Активна</span>',
-	'status_2'                        => '<span style="color:darkblue;">Внимание</span>: срок действия лицензии закончился.',
-	'status_3'                        => '<span style="color:orange;">Внимание</span>: лицензия переиздана. Ожидает повторной активации.',
-	'status_4'                      => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
+	'status_1'                       => '<span style="color:green;">Активна</span>',
+	'status_2'                       => '<span style="color:darkblue;">Внимание</span>: срок действия лицензии закончился.',
+	'status_3'                       => '<span style="color:orange;">Внимание</span>: лицензия переиздана. Ожидает повторной активации.',
+	'status_4'                       => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
 	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',
 	'pending'                        => '<span style="color:red;">Ошибка</span>: лицензия ожидает рассмотрения.',
-	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для этой версии скачивание обновлений запрещено. Пожалуйста поставьте более старую версию модуля.',
+	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для установленной версии. Пожалуйста поставьте более старую версию продукта.',
 	'missing_license_key'            => '<span style="color:red;">Ошибка</span>: лицензионный ключ не указан.',
 	'unknown_local_key_type'         => '<span style="color:red;">Ошибка</span>: неизвестный тип проверки локального ключа.',
 	'could_not_obtain_local_key'     => '<span style="color:red;">Ошибка</span>: невозможно получить новый локальный ключ.',

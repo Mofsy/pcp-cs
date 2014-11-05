@@ -560,51 +560,67 @@ class Protect
 
 		/**
 		 * Проверяем срок истечения локального ключа, если он истек и стоит запрет на использование после истечения
-		 * срока лицензионного ключа, то очищаем ключ и пытаемся получить новый
+		 * срока лицензионного ключа, очищаем ключ и пытаемся получить новый.
 		 */
 		if ($this->use_expires == false && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
 		{
+			/*
+			 * Если имеется доступный льготный период
+			 */
 			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
 			{
-				/**
-				 * Если срок истек, удаляем не действительный локальный ключ
+				/*
+				 * Очищаем не действительный локальный ключ
 				 */
 				$this->clear_local_key();
 
-				/**
-				 * запускаем получение нового ключа.
+				/*
+				 * Запускаем получение нового ключа.
+				 */
+				return $this->validate();
+			}
+		}
+
+		/*
+		 * Проверяем дату релиза с датой истечения ключа активации, если разрешено использование после
+		 * истечения срока лицензионного ключа активации. Дата истечения должна быть меньше даты релиза.
+		 * Негоже использовать новый скрипт со старой лицензией.
+		 */
+		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['license_expires'] < strtotime($this->release_date))
+		{
+			return $this->errors = $this->status_messages['download_access_expired'];
+		}
+
+		/**
+		 * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
+		 * после истечения срока лицензионного ключа.
+		 */
+		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
+		{
+			/*
+			 * Если имеется доступный льготный период
+			 */
+			if ($this->in_delay_period($local_key, $key_data['local_key_expires']) < 0)
+			{
+				/*
+				 * Очищаем не действительный локальный ключ
+				 */
+				$this->clear_local_key();
+
+				/*
+				 * Запускаем получение нового ключа.
 				 */
 				return $this->validate();
 			}
 		}
 
 		/**
-		 * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
-		 * после истечения срока лицензионного ключа,
-		 * todo: реализовать
-		 */
-		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() )
-		{
-
-		}
-
-		/**
-		 *  Проверяем срок истечения обновлений (на будущее), пока не затрагиваем
-
-		if ($this->validate_download_access && strtolower($key_data['download_access_expires']) != 'never' && (integer)$key_data['download_access_expires'] < strtotime($this->release_date))
-		{
-			return $this->errors = $this->status_messages['download_access_expired'];
-		}
-		*/
-		
-		/**
-		 * Проверяем права на доступ:
+		 * Проверяем права на запуск для текущего окружения:
 		 *
-		 * - Запуск скрипта для текущего расположения.
 		 * - Проверяем домен. Домен проверяется сразу на поддомены, если адрес домена с www.
 		 * - Проверяем IP адрес сервера.
 		 * - Проверяем имя сервера.
-		 * TODO: добавить проверку по MAC адресу
+		 * - TODO: добавить проверку по MAC адресу
 		 */
 		$conflicts = array();
 		$access_details = $this->access_details();
