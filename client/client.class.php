@@ -204,9 +204,9 @@ class Protect
 	{
 		/*
 		 * Если локальный компьютер и Windows, а так же разрешено использование
-		 * на локальном компьютере без активации
+		 * на локальном компьютере без активации и локальный ключ не найден.
 		 */
-		if($this->use_localhost && $this->get_local_ip() && $this->is_windows())
+		if($this->use_localhost && $this->get_local_ip() && $this->is_windows() && !file_exists("{$this->local_key_path}{$this->local_key_name}"))
 		{
 			$this->status = true;
 			return $this->errors = $this->status_messages['localhost'];
