@@ -7,9 +7,9 @@
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
-namespace Mofsy\License\Server;
+namespace Mofsy\License\Server\Storage;
 
-class Db
+class Mysqli
 {
 	public $id = false;
 
@@ -30,17 +30,8 @@ class Db
 
 	public function __construct($db_user, $db_pass, $db_name, $db_location = 'localhost', $show_error = 0)
 	{
-		$db_location = explode(":", $db_location);
 
-		if (isset($db_location[1])) {
-
-			$this->id = @mysqli_connect($db_location[0], $db_user, $db_pass, $db_name, $db_location[1]);
-
-		} else {
-
-			$this->id = @mysqli_connect($db_location[0], $db_user, $db_pass, $db_name);
-
-		}
+		$this->id = @mysqli_connect($db_location, $db_user, $db_pass, $db_name);
 
 		if (!$this->id) {
 			if ($show_error == 1) {

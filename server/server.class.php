@@ -9,6 +9,8 @@
 
 namespace Mofsy\License\Server;
 
+use Mofsy\License\Server\Storage\Mysqli;
+
 class Protect {
 
 	/**
@@ -33,7 +35,7 @@ class Protect {
 		$this->_db_prefix = $db_prefix;
 
 		include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'database.class.php');
-		$this->_db = new Db($db_user, $db_pass, $db_name, $db_host);
+		$this->_db = new Mysqli($db_user, $db_pass, $db_name, $db_host);
 	}
 
 	/**
