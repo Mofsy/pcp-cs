@@ -6,7 +6,7 @@
  * @author		Oleg Budrin <ru.mofsy@yandex.ru>
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
-
+$time_start = microtime(true);
 include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'client.class.php');
 
 /**
@@ -38,7 +38,7 @@ $protect->license_key = 'WEFSZ-ERGER-GRGER-NGNFG-SDFSF';
 /**
  * Указываем дату релиза скрипта
  */
-$protect->release_date = '03.11.2014';
+$protect->release_date = '2014-11-24';
 
 /**
  * Устанавливаем локализацию статусов и ошибок
@@ -50,7 +50,7 @@ $protect->status_messages = array(
 	'status_4'                       => '<span style="color:red;">Ошибка</span>: лицензия была приостановлена.',
 	'localhost'                      => '<span style="color:orange;">Активна на localhost</span>: используется локальный компьютер, на реальном сервере произойдет активация, если вы правильно ввели лицензионный ключ активации в настройках.',
 	'pending'                        => '<span style="color:red;">Ошибка</span>: лицензия ожидает рассмотрения.',
-	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ не подходит для установленной версии. Пожалуйста поставьте более старую версию продукта.',
+	'download_access_expired'        => '<span style="color:red;">Ошибка</span>: ключ активации не подходит для установленной версии. Пожалуйста поставьте более старую версию продукта.',
 	'missing_license_key'            => '<span style="color:red;">Ошибка</span>: лицензионный ключ не указан.',
 	'could_not_obtain_local_key'     => '<span style="color:red;">Ошибка</span>: невозможно получить новый локальный ключ.',
 	'maximum_delay_period_expired'   => '<span style="color:red;">Ошибка</span>: льготный период локального ключа истек.',
@@ -88,4 +88,13 @@ echo $protect->errors;
  */
 echo '<br />' . $protect->user_name;
 
+/**
+ * Так же можно вывести дату окончания лицензии
+ */
+echo '<br />' . date('j F Y, H:i', $protect->license_expires);
 
+
+$time_end = microtime(true);
+$time = $time_end - $time_start;
+
+echo "<br /> Выполнялось $time секунд\n";

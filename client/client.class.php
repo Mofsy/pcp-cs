@@ -33,6 +33,13 @@ class Protect
 	public $license_key = '';
 
 	/**
+	 * Срок истечения лицензионного ключа в timestamp, если 0 то лицензия вечная.
+	 *
+	 * @var integer
+	 */
+	public $license_expires;
+
+	/**
 	 * Секретный локальный ключ
 	 *
 	 * @var string
@@ -137,11 +144,11 @@ class Protect
 	public $local_key_last;
 
 	/**
-	 * Дата релиза скрипта в формате DD.MM.YY
+	 * Дата релиза скрипта в формате ISO 8601 (YYYY-MM-DD)
 	 *
 	 * @var string
 	 */
-	public $release_date = '21.10.2014';
+	public $release_date = '2014-10-24';
 
 	/**
 	 * Имя (логин, например на сайте автора) на кого выдана лицензия
@@ -537,6 +544,18 @@ class Protect
 		 */
 		$this->user_name = $key_data['user_name'];
 
+		/*
+		 * Присваиваем срок окончания лицензии свойству класса
+		 */
+		if ((string)$key_data['license_expires'] == 'never')
+		{
+			$this->license_expires = 0;
+		}
+		else
+		{
+			$this->license_expires = (integer)$key_data['license_expires'];
+		}
+
 		/**
 		 * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
 		 */
@@ -591,7 +610,7 @@ class Protect
 		 * истечения срока лицензионного ключа активации. Дата истечения должна быть меньше даты релиза.
 		 * Негоже использовать новый скрипт со старой лицензией.
 		 */
-		if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['license_expires'] < strtotime($this->release_date))
+		if ($this->use_expires == true && (string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < strtotime($this->release_date))
 		{
 			return $this->errors = $this->status_messages['download_access_expired'];
 		}
