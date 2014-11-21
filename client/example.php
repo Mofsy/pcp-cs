@@ -6,6 +6,7 @@
  * @author		Oleg Budrin <ru.mofsy@yandex.ru>
  * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
+
 $time_start = microtime(true);
 include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'client.class.php');
 
@@ -38,7 +39,7 @@ $protect->license_key = 'WEFSZ-ERGER-GRGER-NGNFG-SDFSF';
 /**
  * Указываем дату релиза скрипта
  */
-$protect->release_date = '2014-11-24';
+$protect->release_date = '2014-10-02';
 
 /**
  * Устанавливаем локализацию статусов и ошибок

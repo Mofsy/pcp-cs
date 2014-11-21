@@ -1128,7 +1128,7 @@ class Protect
 	*/
 	private function use_fopen($url, $querystring)
 	{
-		if (!function_exists('file_get_contents')) { return false; }
+		if (!function_exists('file_get_contents') && !ini_get('allow_url_fopen')) { return false; }
 
 		return @file_get_contents("{$url}?{$querystring}");
 	}
