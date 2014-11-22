@@ -73,7 +73,7 @@ class Protect
 	 *
 	 * @var string
 	 */
-	public $local_ua = 'PHP code protect (http://site.ru)';
+	public $local_ua = 'PHP code protect';
 
 	/**
 	 * Маркер использования на локальной системе с Windows без активации
@@ -90,7 +90,7 @@ class Protect
 	 *
 	 * @var boolean
 	 */
-	public $use_expires = true;
+	private $use_expires = true;
 
 	/**
 	 * Маркер режима хранения ключа
@@ -423,7 +423,6 @@ class Protect
 	* Получаем массив возможных IP адресов
 	*
 	* @param string $key
-	* @param array $valid_accesses
 	* @return array
 	*/
 	private function wildcard_ip($key)
@@ -446,8 +445,7 @@ class Protect
 	* Получаем доменное имя с учетом wildcard
 	*
 	* @param string $key
-	* @param array $valid_accesses
-	* @return array
+	* @return string
 	*/
 	private function wildcard_domain($key)
 	{
@@ -458,7 +456,6 @@ class Protect
 	* Получаем server hostname с учетом wildcard
 	*
 	* @param string $key
-	* @param array $valid_accesses
 	* @return array
 	*/
 	private function wildcard_server_hostname($key)

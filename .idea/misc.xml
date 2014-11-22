@@ -6,5 +6,8 @@
     </behat_settings>
   </component>
   <component name="ProjectRootManager" version="2" />
+  <component name="UnicodeBrowser">
+    <option name="fontName" value="Lucida Console" />
+  </component>
 </project>
 

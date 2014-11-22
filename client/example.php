@@ -82,17 +82,17 @@ if($protect->status)
  *
  * NOTE: например в панели скрипта или в лог, что бы знать в каком состоянии находится лицензия.
  */
-echo $protect->errors;
+echo 'Статус: ' . $protect->errors;
 
 /**
  * Так же можно вывести имя (логин), на которое выдана лицензия
  */
-echo '<br />' . $protect->user_name;
+echo '<br />Имя, на которое выдана лицензия: ' . $protect->user_name;
 
 /**
  * Так же можно вывести дату окончания лицензии
  */
-echo '<br />' . date('j F Y, H:i', $protect->license_expires);
+echo '<br />Лицензия действует до ' . date('j F Y, H:i', $protect->license_expires);
 
 
 $time_end = microtime(true);
