@@ -18,24 +18,24 @@ class Protect {
 	 *
 	 * @var string
 	 */
-	private $_db_prefix = 'pcp';
+	private $db_prefix = 'pcp';
 
 	/**
 	 * Объект базы данных
 	 *
 	 * @var object
 	 */
-	private $_db;
+	private $db;
 
 	/**
 	 * Конструктор класса
 	 */
 	public function __construct($db_host, $db_user, $db_pass, $db_name, $db_prefix)
 	{
-		$this->_db_prefix = $db_prefix;
+		$this->db_prefix = $db_prefix;
 
-		include_once(dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'database.class.php');
-		$this->_db = new Mysqli($db_user, $db_pass, $db_name, $db_host);
+		include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR .'Storage' . DIRECTORY_SEPARATOR .'mysqli.php');
+		$this->db = new Mysqli($db_user, $db_pass, $db_name, $db_host);
 	}
 
 	/**
@@ -43,7 +43,7 @@ class Protect {
 	 */
 	public function __destruct()
 	{
-		$this->_db->close();
+		$this->db->close();
 	}
 
 	/**
@@ -77,6 +77,11 @@ class Protect {
 				 * Создаем локальный ключ
 				 */
 				$local_key = $this->localKeyCreate($key_data, $method_data);
+
+				/*
+				 * Обновляем последнее обращение к ключу
+				 */
+				$this->licenseKeyCheckLastUpdate($client_data['key']);
 
 				/*
 				 * Скармливаем клиенту локальный ключ
@@ -239,9 +244,9 @@ class Protect {
 		// идентификатор метода проверки ключа
 		$new_key_data['method'] = $method;
 
-		$this->_db->query( "INSERT INTO " . $this->_db_prefix . "_license_keys SET `l_status` = '$status', `l_started` = '{$new_key_data['started']}', `l_expires` = '$expires', `l_key` = '{$new_key_data['key']}', `l_method_id`  = '$method'" );
+		$this->db->query( "INSERT INTO " . $this->db_prefix . "_license_keys SET `l_status` = '$status', `l_started` = '{$new_key_data['started']}', `l_expires` = '$expires', `l_key` = '{$new_key_data['key']}', `l_method_id`  = '$method'" );
 
-		$new_key_data['id'] = $this->_db->insert_id();
+		$new_key_data['id'] = $this->db->insert_id();
 
 		return $new_key_data;
 	}
@@ -261,8 +266,8 @@ class Protect {
 		// Секретный ключ метода
 		$new_method_data['secret_key'] = (string)$secret_key;
 
-		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_methods WHERE secret_key = '{$new_method_data['secret_key']}'");
-		$row = $this->_db->get_row($result);
+		$result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_methods WHERE secret_key = '{$new_method_data['secret_key']}'");
+		$row = $this->db->get_row($result);
 		if(count($row) > 0)
 		{
 			return false;
@@ -274,10 +279,10 @@ class Protect {
 		// Маркер метода проверки локального ключа, если несколько значений, то через запятую.
 		$new_method_data['enforce'] = $enforce;
 
-		$this->_db->query( "INSERT INTO " . $this->_db_prefix . "_license_methods SET name = '{$new_method_data['name']}', secret_key = '{$new_method_data['secret_key']}', check_period = '{$new_method_data['check_period']}', enforce = '{$new_method_data['enforce']}'" );
+		$this->db->query( "INSERT INTO " . $this->db_prefix . "_license_methods SET name = '{$new_method_data['name']}', secret_key = '{$new_method_data['secret_key']}', check_period = '{$new_method_data['check_period']}', enforce = '{$new_method_data['enforce']}'" );
 
 		// Идентификатор метода проверки ключа активации
-		$new_method_data['id'] = $this->_db->insert_id();
+		$new_method_data['id'] = $this->db->insert_id();
 
 		return $new_method_data;
 	}
@@ -292,8 +297,8 @@ class Protect {
 	{
 		$method_data = array();
 
-		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_methods WHERE id='{$license_key_method_id}'");
-		$row = $this->_db->get_row($result);
+		$result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_methods WHERE id='{$license_key_method_id}'");
+		$row = $this->db->get_row($result);
 
 		/**
 		 * Секретный ключ метода
@@ -323,8 +328,8 @@ class Protect {
 	public function licenseKeyGet($key)
 	{
 
-		$result = $this->_db->query("SELECT * FROM " . $this->_db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
-		$row = $this->_db->get_row($result);
+		$result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
+		$row = $this->db->get_row($result);
 
 		if(count($row) > 0)
 		{
@@ -431,7 +436,7 @@ class Protect {
 	 */
 	public function licenseKeyActivate($client_data)
 	{
-		$this->_db->query("UPDATE " . $this->_db_prefix . "_license_keys SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
+		$this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
 
 		return $this->licenseKeyGet($client_data['key']);
 	}
@@ -441,7 +446,7 @@ class Protect {
 	 */
 	public function licenseKeyTruncateByKey($license_key)
 	{
-		$this->_db->query("UPDATE " . $this->_db_prefix . "_license_keys SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'");
+		$this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'");
 	}
 
 	/**
@@ -460,7 +465,7 @@ class Protect {
 	 */
 	public function licenseKeyStatusUpdateByKey($license_key, $status)
 	{
-		$this->_db->query("UPDATE " . $this->_db_prefix . "_license_keys SET l_status='$status' WHERE l_key='$license_key'");
+		$this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_status='$status' WHERE l_key='$license_key'");
 
 		return true;
 	}
@@ -482,12 +487,12 @@ class Protect {
 			/**
 	   		 * Лицензионный ключ активации
 			 */
-			$client_data['key'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['license_key'])))));
+			$client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['license_key'])))));
 
 			/**
 			 * Домен на котором установлен клиент (без www)
 			 */
-			$client_data['domain'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['domain'])))));
+			$client_data['domain'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['domain'])))));
 			$client_data['domain'] = str_replace("www.", "", $client_data['domain']);
 
 			/**
@@ -498,17 +503,17 @@ class Protect {
 			/**
 			 * Директория от root где установлен клиент
 			 */
-			$client_data['directory'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['directory'])))));
+			$client_data['directory'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['directory'])))));
 
 			/**
 			 * Имя хоста где установлен лиент
 			 */
-			$client_data['server_hostname'] = $this->_db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['server_hostname'])))));
+			$client_data['server_hostname'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['server_hostname'])))));
 
 			/**
 			 * Айпи адрес сервера где установлен клиент
 			 */
-			$client_data['server_ip'] = $this->_db->filter(htmlspecialchars(trim(strip_tags($_POST['server_ip']))));
+			$client_data['server_ip'] = $this->db->filter(htmlspecialchars(trim(strip_tags($_POST['server_ip']))));
 
 			return $client_data;
 		}
@@ -516,11 +521,15 @@ class Protect {
 		return false;
 	}
 
-	/*
+	/**
 	 * Обновление времени обращения к лицензии
+	 *
+	 * @param string $license_key
+	 *
 	 */
-	public function licenseKeyCheckLastUpdate()
+	public function licenseKeyCheckLastUpdate($license_key)
 	{
-
+		$date = time();
+		$this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_last_check='$date' WHERE l_key='$license_key'");
 	}
-} 
+}
