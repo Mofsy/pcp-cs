@@ -26,18 +26,18 @@ class Protect
     public $errors = false;
 
     /**
-     * Лицензионный ключ активации
+     * Ключ активации
      *
      * @var string
      */
-    public $license_key = '';
+    public $activation_key = '';
 
     /**
-     * Срок истечения лицензионного ключа в timestamp, если 0 то лицензия вечная.
+     * Срок истечения ключа активации в timestamp, если 0 то лицензия вечная.
      *
      * @var integer
      */
-    public $license_expires;
+    public $activation_key_expires;
 
     /**
      * Секретный локальный ключ
@@ -163,23 +163,23 @@ class Protect
      * @var array
      */
     public $status_messages = array(
-        'status_1'                       => 'This license is active.',
-        'status_2'                       => 'Error: This license has expired.',
-        'status_3'                       => 'License republished. Awaiting reactivation.',
-        'status_4'                       => 'Error: This license has been suspended.',
-        'pending'                        => 'Error: This license is pending review.',
+        'status_1'                       => 'This activation key is active.',
+        'status_2'                       => 'Error: This activation key has expired.',
+        'status_3'                       => 'Activation key republished. Awaiting reactivation.',
+        'status_4'                       => 'Error: This activation key has been suspended.',
+        'localhost'                      => 'This activation key is active (localhost).',
+        'pending'                        => 'Error: This activation key is pending review.',
         'download_access_expired'        => 'Error: This version of the software was released after your download access expired. Please downgrade software or contact support for more information.',
-        'missing_license_key'            => 'Error: The license key variable is empty.',
-        'could_not_obtain_local_key'     => 'Error: I could not obtain a new local license key.',
-        'maximum_delay_period_expired'   => 'Error: The maximum local license key delay period has expired.',
-        'local_key_tampering'            => 'Error: The local license key has been tampered with or is invalid.',
-        'local_key_invalid_for_location' => 'Error: The local license key is invalid for this location.',
+        'missing_activation_key'         => 'Error: The activation key variable is empty.',
+        'could_not_obtain_local_key'     => 'Error: I could not obtain a new local key.',
+        'maximum_delay_period_expired'   => 'Error: The maximum local key delay period has expired.',
+        'local_key_tampering'            => 'Error: The local key has been tampered with or is invalid.',
+        'local_key_invalid_for_location' => 'Error: The local key is invalid for this location.',
         'missing_license_file'           => 'Error: Please create the following file (and directories if they dont exist already): ',
         'license_file_not_writable'      => 'Error: Please make the following path writable: ',
         'invalid_local_key_storage'      => 'Error: I could not determine the local key storage on clear.',
-        'could_not_save_local_key'       => 'Error: I could not save the local license key.',
-        'license_key_string_mismatch'    => 'Error: The local key is invalid for this license.',
-        'localhost'                      => 'This license is active (localhost).'
+        'could_not_save_local_key'       => 'Error: I could not save the local key.',
+        'activation_key_string_mismatch' => 'Error: The local key is invalid for this activation key.'
     );
 
     /**
@@ -216,8 +216,8 @@ class Protect
         /*
          * Если ключ активации пустой, возвращаем ошибку
          */
-        if (!$this->license_key) {
-            return $this->errors = $this->status_messages['missing_license_key'];
+        if (!$this->activation_key) {
+            return $this->errors = $this->status_messages['missing_activation_key'];
         }
 
         /*
@@ -235,7 +235,7 @@ class Protect
              * По умолчанию возвращаем ошибку
              */
             default:
-                return $this->errors = $this->status_messages['missing_license_key'];
+                return $this->errors = $this->status_messages['missing_activation_key'];
         }
 
         /*
@@ -546,17 +546,17 @@ class Protect
         /*
          * Присваиваем срок окончания лицензии свойству класса
          */
-        if ((string)$key_data['license_expires'] == 'never') {
-            $this->license_expires = 0;
+        if ((string)$key_data['activation_key_expires'] == 'never') {
+            $this->activation_key_expires = 0;
         } else {
-            $this->license_expires = (integer)$key_data['license_expires'];
+            $this->activation_key_expires = (integer)$key_data['activation_key_expires'];
         }
 
         /*
          * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
          */
-        if ((string)$key_data['license_key'] != (string)$this->license_key) {
-            return $this->errors = $this->status_messages['license_key_string_mismatch'];
+        if ((string)$key_data['activation_key'] != (string)$this->activation_key) {
+            return $this->errors = $this->status_messages['activation_key_string_mismatch'];
         }
 
         /*
@@ -571,7 +571,7 @@ class Protect
          *
          * NOTE: если срок ключа активации истек и стоит запрет на использование после истечение срока, выдаем ошибку.
          */
-        if ($this->use_expires == false && (string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < time()) {
+        if ($this->use_expires == false && (string)$key_data['activation_key_expires'] != 'never' && (integer)$key_data['activation_key_expires'] < time()) {
             return $this->errors = $this->status_messages['status_2'];
         }
 
@@ -602,7 +602,9 @@ class Protect
          * истечения срока лицензионного ключа активации. Дата истечения должна быть меньше даты релиза.
          * Негоже использовать новый скрипт со старой лицензией.
          */
-        if ($this->use_expires == true && (string)$key_data['license_expires'] != 'never' && (integer)$key_data['license_expires'] < strtotime($this->release_date)) {
+        if ($this->use_expires == true
+            && (string)$key_data['activation_key_expires'] != 'never'
+            && (integer)$key_data['activation_key_expires'] < strtotime($this->release_date)) {
             return $this->errors = $this->status_messages['download_access_expired'];
         }
 
@@ -610,7 +612,10 @@ class Protect
          * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
          * после истечения срока лицензионного ключа.
          */
-        if ($this->use_expires == true && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time() && (integer)$key_data['license_expires'] > (integer)$key_data['local_key_expires'] + 604800) {
+        if ($this->use_expires == true
+            && (string)$key_data['local_key_expires'] != 'never'
+            && (integer)$key_data['local_key_expires'] < time()
+            && (integer)$key_data['activation_key_expires'] > (integer)$key_data['local_key_expires'] + 604800) {
             /*
              * Если имеется доступный льготный период
              */
@@ -772,7 +777,7 @@ class Protect
         /*
          * Cобираем строку для POST запроса
          */
-        $query_string = 'license_key=' . urlencode($this->license_key) . '&';
+        $query_string = 'activation_key=' . urlencode($this->activation_key) . '&';
         $query_string .= http_build_query($this->accessDetails());
 
         /*

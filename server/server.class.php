@@ -133,9 +133,9 @@ class Protect
         $local_key['user_name'] = (string)$key_data['user_name'];
 
         /**
-         * Лицензионный ключ
+         * Ключ активации
          */
-        $local_key['license_key'] = (string)$key_data['key'];
+        $local_key['activation_key'] = (string)$key_data['key'];
 
         /**
          * Дата начала действия лицензии в Unix-времени
@@ -147,7 +147,7 @@ class Protect
          *
          * NOTE: возможно указать значение never, в данном случае оно равняется бесконечности.
          */
-        $local_key['license_expires'] = $key_data['expires'];
+        $local_key['activation_key_expires'] = $key_data['expires'];
 
         /**
          * Время истечения локального ключа
@@ -474,13 +474,13 @@ class Protect
         /**
          * Проверяем наличие пост запроса от клиента
          */
-        if (isset($_POST['license_key'])) {
+        if (isset($_POST['activation_key'])) {
             $client_data = array();
 
             /**
              * Лицензионный ключ активации
              */
-            $client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['license_key'])))));
+            $client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['activation_key'])))));
 
             /**
              * Домен на котором установлен клиент (без www)
