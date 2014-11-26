@@ -2,9 +2,9 @@
 /**
  * PHP code protect
  *
- * @link 		https://github.com/Mofsy/pcp-cs
- * @author		Oleg Budrin <ru.mofsy@yandex.ru>
- * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ * @link          https://github.com/Mofsy/pcp-cs
+ * @author        Oleg Budrin <ru.mofsy@yandex.ru>
+ * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'server.class.php');

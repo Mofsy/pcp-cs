@@ -2,168 +2,170 @@
 /**
  * PHP code protect
  *
- * @link 		https://github.com/Mofsy/pcp-cs
- * @author		Oleg Budrin <ru.mofsy@yandex.ru>
- * @copyright	Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ * @link          https://github.com/Mofsy/pcp-cs
+ * @author        Oleg Budrin <ru.mofsy@yandex.ru>
+ * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
 namespace Mofsy\License\Server\Storage;
 
 class Mysqli
 {
-	public $id = false;
+    public $id = false;
 
-	public $query_id = false;
+    public $query_id = false;
 
-	public $query_num = 0;
+    public $query_num = 0;
 
-	public $query_list = array();
+    public $query_list = array();
 
-	public $error = '';
+    public $error = '';
 
-	public $error_num = 0;
+    public $error_num = 0;
 
-	public $mysql_version = '';
+    public $mysql_version = '';
 
-	public $collate = 'utf8';
+    public $collate = 'utf8';
 
 
-	public function __construct($db_user, $db_pass, $db_name, $db_location = 'localhost', $show_error = 0)
-	{
+    public function __construct($db_user, $db_pass, $db_name, $db_location = 'localhost', $show_error = 0)
+    {
 
-		$this->id = @mysqli_connect($db_location, $db_user, $db_pass, $db_name);
+        $this->id = @mysqli_connect($db_location, $db_user, $db_pass, $db_name);
 
-		if (!$this->id) {
-			if ($show_error == 1) {
-				$this->display_error(mysqli_connect_error(), '1');
-			} else {
-				return false;
-			}
-		}
+        if (!$this->id) {
+            if ($show_error == 1) {
+                $this->display_error(mysqli_connect_error(), '1');
+            } else {
+                return false;
+            }
+        }
 
-		$this->mysql_version = mysqli_get_server_info($this->id);
+        $this->mysql_version = mysqli_get_server_info($this->id);
 
-		mysqli_query($this->id, "SET NAMES '" . $this->collate . "'");
+        mysqli_query($this->id, "SET NAMES '" . $this->collate . "'");
 
-		return true;
-	}
+        return true;
+    }
 
-	public function query($query, $show_error = true)
-	{
-		if (!($this->query_id = mysqli_query($this->id, $query))) {
+    public function query($query, $show_error = true)
+    {
+        if (!($this->query_id = mysqli_query($this->id, $query))) {
 
-			$this->error = mysqli_error($this->id);
-			$this->error_num = mysqli_errno($this->id);
+            $this->error = mysqli_error($this->id);
+            $this->error_num = mysqli_errno($this->id);
 
-			if ($show_error) {
-				$this->display_error($this->error, $this->error_num, $query);
-			}
-		}
-		$this->query_num++;
+            if ($show_error) {
+                $this->display_error($this->error, $this->error_num, $query);
+            }
+        }
+        $this->query_num++;
 
-		return $this->query_id;
-	}
+        return $this->query_id;
+    }
 
-	public function get_row($query_id = '')
-	{
-		if ($query_id == '') $query_id = $this->query_id;
+    public function get_row($query_id = '')
+    {
+        if ($query_id == '') $query_id = $this->query_id;
 
-		return mysqli_fetch_assoc($query_id);
-	}
+        return mysqli_fetch_assoc($query_id);
+    }
 
-	public function get_affected_rows()
-	{
-		return mysqli_affected_rows($this->id);
-	}
+    public function get_affected_rows()
+    {
+        return mysqli_affected_rows($this->id);
+    }
 
-	public function get_array($query_id = '')
-	{
-		if ($query_id == '') $query_id = $this->query_id;
+    public function get_array($query_id = '')
+    {
+        if ($query_id == '') $query_id = $this->query_id;
 
-		return mysqli_fetch_array($query_id);
-	}
+        return mysqli_fetch_array($query_id);
+    }
 
-	public function super_query($query, $multi = false)
-	{
+    public function super_query($query, $multi = false)
+    {
 
-		if (!$multi) {
+        if (!$multi) {
 
-			$this->query($query);
-			$data = $this->get_row();
-			$this->free();
+            $this->query($query);
+            $data = $this->get_row();
+            $this->free();
 
-			return $data;
+            return $data;
 
-		} else {
-			$this->query($query);
+        } else {
+            $this->query($query);
 
-			$rows = array();
-			while ($row = $this->get_row()) {
-				$rows[] = $row;
-			}
+            $rows = array();
+            while ($row = $this->get_row()) {
+                $rows[] = $row;
+            }
 
-			$this->free();
+            $this->free();
 
-			return $rows;
-		}
-	}
+            return $rows;
+        }
+    }
 
-	public function num_rows($query_id = '')
-	{
-		if ($query_id == '') $query_id = $this->query_id;
+    public function num_rows($query_id = '')
+    {
+        if ($query_id == '') $query_id = $this->query_id;
 
-		return mysqli_num_rows($query_id);
-	}
+        return mysqli_num_rows($query_id);
+    }
 
-	public function insert_id()
-	{
-		return mysqli_insert_id($this->id);
-	}
+    public function insert_id()
+    {
+        return mysqli_insert_id($this->id);
+    }
 
-	public function get_result_fields($query_id = '')
-	{
+    public function get_result_fields($query_id = '')
+    {
 
-		if ($query_id == '') $query_id = $this->query_id;
+        if ($query_id == '') $query_id = $this->query_id;
 
-		while ($field = mysqli_fetch_field($query_id)) {
-			$fields[] = $field;
-		}
+        $fields = array();
 
-		return $fields;
-	}
+        while ($field = mysqli_fetch_field($query_id)) {
+            $fields[] = $field;
+        }
 
-	public function filter($source)
-	{
-		if ($this->id) return mysqli_real_escape_string($this->id, $source);
-		else return addslashes($source);
-	}
+        return $fields;
+    }
 
-	public function free($query_id = '')
-	{
+    public function filter($source)
+    {
+        if ($this->id) return mysqli_real_escape_string($this->id, $source);
+        else return addslashes($source);
+    }
 
-		if ($query_id == '') $query_id = $this->query_id;
+    public function free($query_id = '')
+    {
 
-		@mysqli_free_result($query_id);
-	}
+        if ($query_id == '') $query_id = $this->query_id;
 
-	public function close()
-	{
-		@mysqli_close($this->id);
-	}
+        @mysqli_free_result($query_id);
+    }
 
-	public function display_error($error, $error_num, $query = '')
-	{
+    public function close()
+    {
+        @mysqli_close($this->id);
+    }
 
-		$query = htmlspecialchars($query, ENT_QUOTES, 'ISO-8859-1');
-		$error = htmlspecialchars($error, ENT_QUOTES, 'ISO-8859-1');
+    public function display_error($error, $error_num, $query = '')
+    {
 
-		echo <<<HTML
+        $query = htmlspecialchars($query, ENT_QUOTES, 'ISO-8859-1');
+        $error = htmlspecialchars($error, ENT_QUOTES, 'ISO-8859-1');
+
+        echo <<<HTML
 			Error ($error_num):<br /> <b>{$error}</b><br /><br />
 			<b>SQL query:</b><br /><br />{$query}
 HTML;
 
-		die();
-	}
+        die();
+    }
 
 }
 
