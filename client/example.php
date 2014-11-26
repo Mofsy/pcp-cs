@@ -86,13 +86,16 @@ echo 'Статус: ' . $protect->errors;
 /**
  * Так же можно вывести имя (логин), на которое выдана лицензия
  */
-echo '<br />Имя, на которое выдана лицензия: ' . $protect->user_name;
+echo '<br />Имя, на которое выдан ключ активации: ' . $protect->user_name;
 
 /**
  * Так же можно вывести дату окончания лицензии
  */
-echo '<br />Лицензия действует до ' . date('j F Y, H:i', $protect->activation_key_expires);
-
+if(is_numeric($protect->activation_key_expires) && $protect->activation_key_expires > 0) {
+    echo '<br />Ключ действует до ' . date('j F Y, H:i', $protect->activation_key_expires);
+} else {
+    echo '<br />Ключ действует вечно';
+}
 
 $time_end = microtime(true);
 $time = $time_end - $time_start;
