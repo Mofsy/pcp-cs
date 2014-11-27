@@ -644,14 +644,23 @@ class Protect
                         }
                     }
                 } elseif (in_array($key, array('domain'))) {
-                    if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 1 && preg_match("/" . $valid_accesses[0] . "\z/i", $access_details[$key])){
-                        $access_details[$key] = '*.' . $valid_accesses[0];
-                    }
-                    if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 2){
-                        $exp_domain = explode('.', $valid_accesses[0]);
-                        $exp_domain = $exp_domain[0];
-                        if(preg_match("/".$exp_domain."/i", $access_details[$key])){
-                            $access_details[$key] = '*.' . $valid_accesses[0] . '.*';
+                    if(isset($key_data['domain_wildcard'])) {
+                        if($key_data['domain_wildcard'] == 1 && preg_match("/" . $valid_accesses[0] . "\z/i", $access_details[$key])){
+                            $access_details[$key] = '*.' . $valid_accesses[0];
+                        }
+                        if($key_data['domain_wildcard'] == 2){
+                            $exp_domain = explode('.', $valid_accesses[0]);
+                            $exp_domain = $exp_domain[0];
+                            if(preg_match("/".$exp_domain."/i", $access_details[$key])){
+                                $access_details[$key] = '*.' . $valid_accesses[0] . '.*';
+                            }
+                        }
+                        if($key_data['domain_wildcard'] == 3){
+                            $exp_domain = explode('.', $valid_accesses[0]);
+                            $exp_domain = $exp_domain[0];
+                            if(preg_match("/\A" . $exp_domain . "/i", $access_details[$key])){
+                                $access_details[$key] = $valid_accesses[0] . '.*';
+                            }
                         }
                     }
                     if ($this->validateAccess($access_details[$key], $valid_accesses)) {

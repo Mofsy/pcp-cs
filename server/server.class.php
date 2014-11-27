@@ -109,15 +109,20 @@ class Protect
          * Можно проверять домен, айпи адрес, имя хоста
          */
         $instance = array();
-        // todo: добавить остальные данные (ip, mac, hostname).
+        // todo: добавить остальные данные (ip, hostname).
 
         $instance['domain'][] =  $key_data['domain'];
         $instance['domain'][] =  'www.' . $key_data['domain'];
-        if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 1){
-            $instance['domain'][] =  '*.' . $key_data['domain'];
-        }
-        if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 2){
-            $instance['domain'][] =  '*.' . $key_data['domain'] . '.*';
+        if(isset($key_data['domain_wildcard'])){
+            if($key_data['domain_wildcard'] == 1){
+                $instance['domain'][] = '*.' . $key_data['domain'];
+            }
+            elseif($key_data['domain_wildcard'] == 2){
+                $instance['domain'][] = '*.' . $key_data['domain'] . '.*';
+            }
+            elseif($key_data['domain_wildcard'] == 3){
+                $instance['domain'][] = $key_data['domain'] . '.*';
+            }
         }
 
         /**
@@ -381,8 +386,9 @@ class Protect
              * Разрешено ли использовать на поддоменах
              *
              * 0 - запрещено
-             * 1 - разрешено
-             * 2 - разрешено включая разные доменные зоны
+             * 1 - разрешено на разных подоменах основного домена
+             * 2 - разрешено на разных поддоменах включая разные доменные зоны основного домена
+             * 3 - разрешено на разных доменных зонах основного домена
              */
             $key_data['domain_wildcard'] = $row['l_domain_wildcard'];
 
