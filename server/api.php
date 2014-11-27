@@ -7,6 +7,14 @@
  * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
+@error_reporting(E_ALL ^ E_WARNING ^ E_NOTICE);
+@ini_set('display_errors', false);
+@ini_set('html_errors', false);
+@ini_set('error_reporting', E_ALL ^ E_WARNING ^ E_NOTICE);
+
+/*
+ * Компоненты
+ */
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.php');
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
@@ -16,19 +24,7 @@ include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
  */
 $server = new Mofsy\License\Server\Core\Protect($config['db_host'], $config['db_user'], $config['db_pass'], $config['db_name'], $config['db_prefix']);
 
-/**
- * Добавляем метод проверки лицензионного ключа
+/*
+ * Запускаем сервер
  */
-$method_data = $server->licenseKeyMethodCreate('Название метода', 'Секретный ключ', 'Период проверки в днях', 'Что проверять, например domain, ip');
-
-
-/**
- * Создание нового лицензионного ключа активации
- */
-$key_data = $server->licenseKeyCreate(234234234234, 1, 0);
-
-
-/**
- * Смена статуса лицензионного ключа по ключу
- */
-$server->licenseKeyStatusUpdateByKey('Лицензионный ключ', 'Новый статус');
+$server->run();

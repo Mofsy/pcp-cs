@@ -7,7 +7,7 @@
  * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
-namespace Mofsy\License\Server\Storage;
+namespace Mofsy\License\Server\Core;
 
 class Mysqli
 {

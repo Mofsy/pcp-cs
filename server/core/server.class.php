@@ -7,9 +7,7 @@
  * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
-namespace Mofsy\License\Server;
-
-use Mofsy\License\Server\Storage\Mysqli;
+namespace Mofsy\License\Server\Core;
 
 class Protect
 {
@@ -30,12 +28,16 @@ class Protect
 
     /**
      * Конструктор класса
+     *
+     * @param string $db_host
+     * @param string $db_user
+     * @param string $db_pass
+     * @param string $db_name
+     * @param string $db_prefix
      */
     public function __construct($db_host, $db_user, $db_pass, $db_name, $db_prefix)
     {
         $this->db_prefix = $db_prefix;
-
-        include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . 'mysqli.php');
         $this->db = new Mysqli($db_user, $db_pass, $db_name, $db_host);
     }
 

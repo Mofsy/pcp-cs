@@ -29,7 +29,7 @@ $protect->local_key_name = 'license.lic';
 /**
  * Указываем полный путь до сервера лицензий.
  */
-$protect->server = 'http://localhost/server/server.php';
+$protect->server = 'http://localhost/server/api.php';
 
 /**
  * Указываем ключ активации, например из конфигурации.
