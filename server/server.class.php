@@ -110,7 +110,15 @@ class Protect
          */
         $instance = array();
         // todo: добавить остальные данные (ip, mac, hostname).
-        $instance['domain'] = array(0 => $key_data['domain'], 1 => "www." . $key_data['domain']);
+
+        $instance['domain'][] =  $key_data['domain'];
+        $instance['domain'][] =  'www.' . $key_data['domain'];
+        if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 1){
+            $instance['domain'][] =  '*.' . $key_data['domain'];
+        }
+        if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 2){
+            $instance['domain'][] =  '*.' . $key_data['domain'] . '.*';
+        }
 
         /**
          * Данные о том, что следует проверять
@@ -121,6 +129,11 @@ class Protect
          * Маркер проверки, указывает на то, что надо проверять в данных
          */
         $local_key['enforce'] = $method_data['enforce'];
+
+        /**
+         * Маркер проверки доменного имени
+         */
+        $local_key['domain_wildcard'] = $key_data['domain_wildcard'];
 
         /**
          * Уникальный идентификатор клиента

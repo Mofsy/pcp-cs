@@ -187,7 +187,6 @@ class Protect
      */
     private $trigger_delay_period;
 
-
     /**
      * Конструктор класса
      */
@@ -442,18 +441,6 @@ class Protect
     }
 
     /**
-     * Получаем доменное имя с учетом wildcard
-     *
-     * @param string $key
-     *
-     * @return string
-     */
-    private function wildcardDomain($key)
-    {
-        return '*.' . str_replace('www.', '', $key);
-    }
-
-    /**
      * Получаем server hostname с учетом wildcard
      *
      * @param string $key
@@ -636,10 +623,9 @@ class Protect
         /*
          * Проверяем права на запуск для текущего окружения:
          *
-         * - Проверяем домен. Домен проверяется сразу на поддомены, если адрес домена с www.
+         * - Проверяем домен. Домен проверяется сразу на поддомены, на разные зоны.
          * - Проверяем IP адрес сервера.
          * - Проверяем имя сервера.
-         * - TODO: добавить проверку по MAC адресу
          */
         $conflicts = array();
         $access_details = $this->accessDetails();
@@ -658,7 +644,17 @@ class Protect
                         }
                     }
                 } elseif (in_array($key, array('domain'))) {
-                    if ($this->validateAccess($this->wildcardDomain($access_details[$key]), $valid_accesses)) {
+                    if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 1 && preg_match("/" . $valid_accesses[0] . "\z/i", $access_details[$key])){
+                        $access_details[$key] = '*.' . $valid_accesses[0];
+                    }
+                    if(isset($key_data['domain_wildcard']) && $key_data['domain_wildcard'] == 2){
+                        $exp_domain = explode('.', $valid_accesses[0]);
+                        $exp_domain = $exp_domain[0];
+                        if(preg_match("/".$exp_domain."/i", $access_details[$key])){
+                            $access_details[$key] = '*.' . $valid_accesses[0] . '.*';
+                        }
+                    }
+                    if ($this->validateAccess($access_details[$key], $valid_accesses)) {
                         unset($conflicts[$key]);
                     }
                 } elseif (in_array($key, array('server_hostname'))) {
