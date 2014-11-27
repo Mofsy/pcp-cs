@@ -20,6 +20,3 @@ $config = array(
     'db_prefix' => 'pcp',
 
 );
-
-
-
