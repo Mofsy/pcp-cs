@@ -51,17 +51,3 @@ CREATE TABLE `pcp_license_logs` (
 COLLATE='utf8_general_ci'
 ENGINE=MyISAM
 AUTO_INCREMENT=0;
-
-CREATE TABLE `pcp_users` (
-	`user_id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Идентификатор пользователя',
-	`email` VARCHAR(50) NOT NULL DEFAULT '' COMMENT 'Почта пользователя',
-	`password` VARCHAR(32) NOT NULL DEFAULT '' COMMENT 'Пароль пользователя',
-	`name` VARCHAR(40) NOT NULL DEFAULT '' COMMENT 'Логин пользователя',
-	`user_group` SMALLINT(5) NOT NULL DEFAULT '4' COMMENT 'Группа пользователя',
-	PRIMARY KEY (`user_id`),
-	UNIQUE KEY `name` (`name`),
-	UNIQUE KEY `email` (`email`)
-)
-COLLATE='utf8_general_ci'
-ENGINE=MyISAM
-AUTO_INCREMENT=0;
