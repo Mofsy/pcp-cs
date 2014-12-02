@@ -8,13 +8,13 @@
  */
 
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.php');
+include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
 
 /*
  * Создаем экземпляр класса сервера
  */
-$server = new Mofsy\License\Server\Core\Protect($config['db_host'], $config['db_user'], $config['db_pass'], $config['db_name'], $config['db_prefix']);
+$server = new Mofsy\License\Server\Core\Protect($config);
 
 /**
  * Добавляем метод проверки лицензионного ключа

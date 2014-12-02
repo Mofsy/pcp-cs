@@ -29,16 +29,12 @@ class Protect
     /**
      * Конструктор класса
      *
-     * @param string $db_host
-     * @param string $db_user
-     * @param string $db_pass
-     * @param string $db_name
-     * @param string $db_prefix
+     * @param array $config
      */
-    public function __construct($db_host, $db_user, $db_pass, $db_name, $db_prefix)
+    public function __construct($config)
     {
-        $this->db_prefix = $db_prefix;
-        $this->db = new Mysqli($db_user, $db_pass, $db_name, $db_host);
+        $this->db_prefix = $config['db_prefix'];
+        $this->db = new Mysqli($config['db_user'],$config['db_pass'], $config['db_name'], $config['db_host']);
     }
 
     /**
@@ -46,7 +42,6 @@ class Protect
      */
     public function __destruct()
     {
-        $this->db->close();
     }
 
     /**
@@ -57,7 +52,7 @@ class Protect
         // TODO: Сделать занесение всех обращений в таблицу логов базы данных
 
         if ($client_data = $this->clientDataGet()) {
-            /**
+            /*
              * Запрашиваем все данные о лицензионном ключе из базы данных по ключу клиента
              */
             if ($key_data = $this->licenseKeyGet($client_data['key'])) {
@@ -298,6 +293,8 @@ class Protect
         // Идентификатор метода проверки ключа активации
         $new_method_data['id'] = $this->db->insert_id();
 
+        $this->db->free($result);
+
         return $new_method_data;
     }
 
@@ -329,6 +326,8 @@ class Protect
          * Период проверки локального ключа в днях
          */
         $method_data['check_period'] = $row['check_period'];
+
+        $this->db->free($result);
 
         return $method_data;
     }
@@ -442,6 +441,7 @@ class Protect
 
             return $key_data;
         }
+        $this->db->free($result);
 
         return false;
     }
@@ -545,5 +545,61 @@ class Protect
     {
         $date = time();
         $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_last_check='$date' WHERE l_key='$license_key'");
+    }
+
+    /*
+     * Получение всех ключей активации
+     */
+    public function getActivationKeys()
+    {
+        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_license_keys ORDER BY id" );
+
+        $result_array = array();
+
+
+        while ($row = $this->db->get_array($result) )
+        {
+            if(is_numeric($row['l_expires'])){
+                $row['l_expires'] = date( 'd/m/Y - H:i', $row['l_expires'] );
+            }
+            $result_array[] = array(
+                'id' => $row['id'],
+                'domain' => $row['l_domain'],
+                'started' => date( 'd/m/Y - H:i', $row['l_started'] ),
+                'expires' => $row['l_expires'],
+                'status' => $row['l_status'],
+                'key' => $row['l_key'],
+            );
+        }
+        $this->db->free($result);
+        return $result_array;
+    }
+
+    /*
+     * Получение всех ключей активации
+     */
+    public function getMethodAll()
+    {
+        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_license_methods ORDER BY id DESC" );
+
+        $result_array = array();
+
+        while ($row = $this->db->get_array($result) )
+        {
+            if(is_numeric($row['l_expires'])){
+                $row['l_expires'] = date( 'd/m/Y - H:i', $row['l_expires'] );
+            }
+            $result_array[] = array(
+                'id' => $row['id'],
+                'domain' => $row['l_domain'],
+                'started' => date( 'd/m/Y - H:i', $row['l_started'] ),
+                'expires' => $row['l_expires'],
+                'status' => $row['l_status'],
+                'key' => $row['l_key'],
+            );
+        }
+        $this->db->free($result);
+
+        return $result_array;
     }
 }

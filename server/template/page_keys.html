@@ -1,0 +1,92 @@
+<!-- Content Header (Page header) -->
+<section class="content-header">
+	<h1>
+		Ключи активации
+	</h1>
+	<ol class="breadcrumb">
+		<li><a href="#"><i class="fa fa-dashboard"></i> Главная</a></li>
+		<li class="active">Ключи активации</li>
+	</ol>
+</section>
+
+<!-- Main content -->
+<section class="content">
+<div class="row">
+<div class="col-xs-12">
+<div class="box">
+<!-- /.box-header -->
+<div class="box-body table-responsive">
+<table id="keys" class="table table-bordered table-striped">
+<thead>
+<tr>
+	<th>ID</th>
+	<th>Ключ активации</th>
+	<th>Домен</th>
+	<th>Статус</th>
+	<th>Дата начала</th>
+	<th>Дата окончания</th>
+</tr>
+</thead>
+<tbody>
+{% for key in keys %}
+<tr>
+	<td>{{ key.id }}</td>
+	<td>
+		{{ key.key }}
+	</td>
+	<td>
+		{{ key.domain }}
+	</td>
+	<td>
+		{% if key.status == '0' %} <span class="badge bg-orange">Ожидает активации</span>{% endif %}
+		{% if key.status == '1' %} <span class="badge bg-green">Активен</span>{% endif %}
+		{% if key.status == '2' %} <span class="badge bg-red">Истек срок</span>{% endif %}
+		{% if key.status == '3' %} <span class="badge bg-green">Активен</span>{% endif %}
+		{% if key.status == '4' %} <span class="badge bg-green">Активен</span>{% endif %}
+	</td>
+	<td>{{ key.started }}</td>
+	<td>
+		{% if key.expires == 'never' %} <span class="badge bg-green">Никогда</span>{% endif %}
+		{% if key.expires != 'never' %} {{ key.expires }}{% endif %}
+		</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<!-- /.box-body -->
+</div>
+<!-- /.box -->
+</div>
+</div>
+
+</section><!-- /.content -->
+<script type="text/javascript">
+	$( document ).ready((function() {
+		$('#keys').dataTable({
+			"oLanguage": {
+				"sLengthMenu": "_MENU_ на страницу",
+				"zeroRecords": "Nothing found - sorry",
+				"sInfo": "Показана страница _PAGE_ из _PAGES_",
+				"infoEmpty": "No records available",
+				"infoFiltered": "(найдено из _MAX_ записей)",
+				"processing": "Полажуйста подождите...",
+				"sSearch": "Поиск ",
+				"oPaginate": {
+					"sFirst":    "Первая",
+					"sPrevious": "Назад",
+					"sNext":     "Далее",
+					"sLast":     "Последняя"
+				}
+			},
+			"lengthMenu": [[15, 30, 50], [15, 30, 50]],
+			"stateSave": true,
+			"bPaginate": true,
+			"bLengthChange": true,
+			"bFilter": true,
+			"bSort": true,
+			"bInfo": true,
+			"bAutoWidth": true
+		});
+	}));
+</script>

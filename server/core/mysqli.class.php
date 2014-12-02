@@ -11,45 +11,90 @@ namespace Mofsy\License\Server\Core;
 
 class Mysqli
 {
+    /*
+     * Конфигурация подключения
+     */
+    private $config = array();
+
+    /*
+     * Идентификатор подключения к базе
+     */
     public $id = false;
 
+    /*
+     * Идентификатор запроса
+     */
     public $query_id = false;
 
+    /*
+     * Количество выполненных запросов
+     */
     public $query_num = 0;
 
+    /*
+     * Массив выполненных запросов
+     */
     public $query_list = array();
 
+    /*
+     * Последняя ошибка
+     */
     public $error = '';
 
+    /*
+     * Число ошибок
+     */
     public $error_num = 0;
 
+    /*
+     * Версия Mysql сервера
+     */
     public $mysql_version = '';
 
+    /*
+     * Кодировка
+     */
     public $collate = 'utf8';
 
-
+    /*
+     * Конструктор класса
+     */
     public function __construct($db_user, $db_pass, $db_name, $db_location = 'localhost', $show_error = 0)
     {
+        $this->config['user'] = $db_user;
+        $this->config['pass'] = $db_pass;
+        $this->config['name'] = $db_name;
+        $this->config['location'] = $db_location;
+        $this->config['show_error'] = $show_error;
+        return true;
+    }
 
-        $this->id = @mysqli_connect($db_location, $db_user, $db_pass, $db_name);
+    /*
+     * Создание нового подключения к базе
+     */
+    private function connect(){
+
+        $this->id = mysqli_connect($this->config['location'], $this->config['user'],  $this->config['pass'], $this->config['name']);
 
         if (!$this->id) {
-            if ($show_error == 1) {
-                $this->display_error(mysqli_connect_error(), '1');
+            if ($this->config['show_error'] == 1) {
+                $this->display_error(mysqli_connect_error(), '1', 'connect');
             } else {
                 return false;
             }
         }
 
         $this->mysql_version = mysqli_get_server_info($this->id);
-
         mysqli_query($this->id, "SET NAMES '" . $this->collate . "'");
-
-        return true;
     }
 
+    /*
+     * выполняем запрос
+     */
     public function query($query, $show_error = true)
     {
+        if(!$this->id) $this->connect();
+
         if (!($this->query_id = mysqli_query($this->id, $query))) {
 
             $this->error = mysqli_error($this->id);
@@ -115,6 +160,9 @@ class Mysqli
         return mysqli_num_rows($query_id);
     }
 
+    /*
+     * Номер последней добавленной записи
+     */
     public function insert_id()
     {
         return mysqli_insert_id($this->id);
@@ -142,23 +190,35 @@ class Mysqli
 
     public function free($query_id = '')
     {
-
         if ($query_id == '') $query_id = $this->query_id;
 
-        @mysqli_free_result($query_id);
+        mysqli_free_result($query_id);
     }
 
+    /*
+     * Закрываем соединение
+     */
     public function close()
     {
-        @mysqli_close($this->id);
+        mysqli_close($this->id);
+        $this->id = false;
     }
 
+    /*
+     * Деструктор
+     */
+    public function __destruct()
+    {
+        // Закрываем открытое соединение
+        if($this->id)
+            mysqli_close($this->id);
+    }
+
+    /*
+     * Вывод ошибок
+     */
     public function display_error($error, $error_num, $query = '')
     {
-
-        $query = htmlspecialchars($query, ENT_QUOTES, 'ISO-8859-1');
-        $error = htmlspecialchars($error, ENT_QUOTES, 'ISO-8859-1');
-
         echo <<<HTML
 			Error ($error_num):<br /> <b>{$error}</b><br /><br />
 			<b>SQL query:</b><br /><br />{$query}

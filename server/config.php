@@ -9,6 +9,8 @@
 
 $config = array(
 
+    'home_url' => 'http://localhost/server',
+
     'db_host' => 'localhost',
 
     'db_name' => 'pcp',

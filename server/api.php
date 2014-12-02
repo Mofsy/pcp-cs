@@ -16,7 +16,7 @@
  * Компоненты
  */
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.php');
+include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
 
 /*
