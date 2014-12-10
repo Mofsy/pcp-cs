@@ -68,6 +68,12 @@
           <object-type name="DBLINK" enabled="true" />
         </object-type-filter>
       </filters>
+      <sorting>
+        <object-type name="COLUMN" sorting-type="NAME" />
+        <object-type name="FUNCTION" sorting-type="NAME" />
+        <object-type name="PROCEDURE" sorting-type="NAME" />
+        <object-type name="ARGUMENT" sorting-type="POSITION" />
+      </sorting>
     </browser-settings>
     <navigation-settings>
       <lookup-filters>
