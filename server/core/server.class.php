@@ -250,6 +250,9 @@ class Protect
 
         // получаем дату создания ключа
         $new_key_data['started'] = time();
+        
+        // дата окончания срока действия
+        $new_key_data['expires'] = $expires;
 
         // идентификатор метода проверки ключа
         $new_key_data['method'] = $method;
