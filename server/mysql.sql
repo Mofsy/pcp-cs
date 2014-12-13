@@ -65,3 +65,16 @@ CREATE TABLE `pcp_users` (
 COLLATE='utf8_general_ci'
 ENGINE=MyISAM
 AUTO_INCREMENT=0;
+
+
+CREATE TABLE `pcp_events_logs` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`name` varchar(255) NOT NULL COMMENT 'Название события',
+	`date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`event_data` text NOT NULL COMMENT 'Данные о событии',
+	PRIMARY KEY (`id`),
+	KEY `name` (`name`)
+) 
+COLLATE='utf8_general_ci'
+ENGINE=MyISAM
+AUTO_INCREMENT=0;
