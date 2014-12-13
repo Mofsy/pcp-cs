@@ -238,10 +238,20 @@ class Protect
      * @param integer|string $expires Срок окончания лицензии в Unix формате; Либо never при вечной лицензии.
      * @param integer $method Идентификатор метода проверки лицензионного ключа
      * @param integer $status Статус лицензионного ключа
+     * @param integer $domain_wildcard Разрешено ли использовать на поддоменах (
+     *                                 0 - запрещено, 
+     *                                 1 - разрешено на разных подоменах основного домена, 
+     *                                 2 - разрешено на разных поддоменах включая разные доменные зоны основного домена, 
+     *                                 3 - разрешено на разных доменных зонах основного домена
+     *                                 ) 
+     * @param string $l_name Название лицензии
+     * @param integer $user_id ID пользователя
+     * @param string $user_name Логин пользователя
+     * 
      *
      * @return array Информация о вновь созданном ключе
      */
-    public function licenseKeyCreate($expires, $method, $status = 0)
+    public function licenseKeyCreate($expires, $method, $status = 0, $domain_wildcard = 0, $l_name = '', $user_id = 0, $user_name = '')
     {
         $new_key_data = array();
 
@@ -257,7 +267,25 @@ class Protect
         // идентификатор метода проверки ключа
         $new_key_data['method'] = $method;
 
-        $this->db->query("INSERT INTO " . $this->db_prefix . "_license_keys SET `l_status` = '$status', `l_started` = '{$new_key_data['started']}', `l_expires` = '$expires', `l_key` = '{$new_key_data['key']}', `l_method_id`  = '$method'");
+        // Разрешено ли использовать на поддоменах
+        $new_key_data['domain_wildcard'] = $domain_wildcard;
+        
+         // Название лицензии
+        $new_key_data['l_name'] = $l_name;
+
+        $this->db->query(
+            "INSERT INTO " . $this->db_prefix . "_license_keys 
+            SET 
+            `user_id` = '$user_id', 
+            `user_name` = '{$user_name}', 
+            `l_status` = '$status', 
+            `l_name` = '{$l_name}', 
+            `l_started` = '{$new_key_data['started']}', 
+            `l_expires` = '$expires', 
+            `l_key` = '{$new_key_data['key']}', 
+            `l_domain_wildcard` = '$domain_wildcard', 
+            `l_method_id`  = '$method'"
+            );
 
         $new_key_data['id'] = $this->db->insert_id();
 
