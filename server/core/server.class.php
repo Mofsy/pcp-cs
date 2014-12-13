@@ -484,8 +484,18 @@ class Protect
     public function licenseKeyStatusUpdateByKey($license_key, $status)
     {
         $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_status='$status' WHERE l_key='$license_key'");
+        
+        if ($status == 3) {
+            $this->licenseKeyTruncateByKey($license_key);
+        }
 
-        return true;
+        $return_status = $this->db->super_query("SELECT l_status FROM " . $this->db_prefix . "_license_keys WHERE l_key='{$license_key}'");
+
+        if ($return_status['l_status'] == $status) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
