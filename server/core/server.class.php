@@ -19,6 +19,31 @@ class Protect
      */
     private $db_prefix = 'pcp';
 
+    /*
+     * Название таблицы с ключами активации
+     */
+    private $db_table_keys = 'license_keys';
+
+    /*
+     * Название таблицы с методами проверки ключей активации
+     */
+    private $db_table_methods = 'license_methods';
+
+    /*
+     * Название таблицы с логом обращений к ключам активации
+     */
+    private $db_table_logs = 'license_logs';
+
+    /*
+     * Название таблицы с логом событий
+     */
+    private $db_table_events_logs = 'events_logs';
+
+    /*
+     * Название таблицы с данными о пользователях
+     */
+    private $db_table_users = 'users';
+
     /**
      * Объект базы данных
      *
@@ -33,7 +58,23 @@ class Protect
      */
     public function __construct($config)
     {
+        /*
+         * Префикс таблиц
+         */
         $this->db_prefix = $config['db_prefix'];
+
+        /*
+         * Название таблиц
+         */
+        $this->db_table_users = $config['db_table_users'];
+        $this->db_table_logs = $config['db_table_logs'];
+        $this->db_table_keys = $config['db_table_keys'];
+        $this->db_table_methods = $config['db_table_methods'];
+        $this->db_table_events_logs = $config['db_table_events_logs'];
+
+        /*
+         * Создаем объект подключения к базе данных
+         */
         $this->db = new Mysqli($config['db_user'],$config['db_pass'], $config['db_name'], $config['db_host']);
     }
 
@@ -56,6 +97,7 @@ class Protect
              * Запрашиваем все данные о лицензионном ключе из базы данных по ключу клиента
              */
             if ($key_data = $this->licenseKeyGet($client_data['key'])) {
+
                 /*
                  * Если лицензионный ключ не активирован или переиздан, обновляем данные клиента (домен, ip, hostname, mac)
                  */
@@ -279,7 +321,7 @@ class Protect
         $new_key_data['l_name'] = $l_name;
 
         $this->db->query(
-            "INSERT INTO " . $this->db_prefix . "_license_keys 
+            "INSERT INTO " . $this->db_prefix . "_" . $this->db_table_keys . "
             SET 
             `user_id` = '$user_id', 
             `user_name` = '{$user_name}', 
@@ -312,7 +354,7 @@ class Protect
         // Секретный ключ метода
         $new_method_data['secret_key'] = (string)$secret_key;
 
-        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_methods WHERE secret_key = '{$new_method_data['secret_key']}'");
+        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_methods . " WHERE secret_key = '{$new_method_data['secret_key']}'");
         $row = $this->db->get_row($result);
         if (count($row) > 0) {
             return false;
@@ -324,7 +366,7 @@ class Protect
         // Маркер метода проверки локального ключа, если несколько значений, то через запятую.
         $new_method_data['enforce'] = $enforce;
 
-        $this->db->query("INSERT INTO " . $this->db_prefix . "_license_methods SET name = '{$new_method_data['name']}', secret_key = '{$new_method_data['secret_key']}', check_period = '{$new_method_data['check_period']}', enforce = '{$new_method_data['enforce']}'");
+        $this->db->query("INSERT INTO " . $this->db_prefix . "_" . $this->db_table_methods . " SET name = '{$new_method_data['name']}', secret_key = '{$new_method_data['secret_key']}', check_period = '{$new_method_data['check_period']}', enforce = '{$new_method_data['enforce']}'");
 
         // Идентификатор метода проверки ключа активации
         $new_method_data['id'] = $this->db->insert_id();
@@ -345,7 +387,7 @@ class Protect
     {
         $method_data = array();
 
-        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_methods WHERE id='{$license_key_method_id}'");
+        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_methods . " WHERE id='{$license_key_method_id}'");
         $row = $this->db->get_row($result);
 
         /**
@@ -378,7 +420,7 @@ class Protect
     public function licenseKeyGet($key)
     {
 
-        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_license_keys WHERE l_key='$key' LIMIT 0,1");
+        $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_keys . " WHERE l_key='$key' LIMIT 0,1");
         $row = $this->db->get_row($result);
 
         if (count($row) > 0) {
@@ -487,7 +529,7 @@ class Protect
      */
     public function licenseKeyActivate($client_data)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
+        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . "s SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
 
         return $this->licenseKeyGet($client_data['key']);
     }
@@ -497,7 +539,7 @@ class Protect
      */
     public function licenseKeyTruncateByKey($license_key)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'");
+        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'");
     }
 
     /**
@@ -516,13 +558,13 @@ class Protect
      */
     public function licenseKeyStatusUpdateByKey($license_key, $status)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_status='$status' WHERE l_key='$license_key'");
+        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_status='$status' WHERE l_key='$license_key'");
         
         if ($status == 3) {
             $this->licenseKeyTruncateByKey($license_key);
         }
 
-        $return_status = $this->db->super_query("SELECT l_status FROM " . $this->db_prefix . "_license_keys WHERE l_key='{$license_key}'");
+        $return_status = $this->db->super_query("SELECT l_status FROM " . $this->db_prefix . "_" . $this->db_table_keys . " WHERE l_key='{$license_key}'");
 
         if ($return_status['l_status'] == $status) {
             return true;
@@ -590,7 +632,7 @@ class Protect
     public function licenseKeyCheckLastUpdate($license_key)
     {
         $date = time();
-        $this->db->query("UPDATE " . $this->db_prefix . "_license_keys SET l_last_check='$date' WHERE l_key='$license_key'");
+        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_last_check='$date' WHERE l_key='$license_key'");
     }
 
     /*
@@ -598,7 +640,7 @@ class Protect
      */
     public function getActivationKeys()
     {
-        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_license_keys ORDER BY id" );
+        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_keys . " ORDER BY id" );
 
         $result_array = array();
 
@@ -628,7 +670,7 @@ class Protect
      */
     public function getMethodAll()
     {
-        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_license_methods ORDER BY id DESC" );
+        $result = $this->db->query( "SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_methods . " ORDER BY id DESC" );
 
         $result_array = array();
 
@@ -659,6 +701,6 @@ class Protect
     public function addToLog($event_name, $event_data = array()) 
     {
         $data = json_encode($event_data);
-        $this->db->query("INSERT INTO " . $this->db_prefix . "_events_logs SET `name` = '{$event_name}', `event_data` = '{$data}'");
+        $this->db->query("INSERT INTO " . $this->db_prefix . "_" . $this->db_table_events_logs . " SET `name` = '{$event_name}', `event_data` = '{$data}'");
     }
 }

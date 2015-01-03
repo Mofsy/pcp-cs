@@ -21,4 +21,14 @@ $config = array(
 
     'db_prefix' => 'pcp',
 
+    'db_table_users' => 'users',
+
+    'db_table_logs' => 'license_logs',
+
+    'db_table_keys' => 'license_keys',
+
+    'db_table_methods' => 'license_methods',
+
+    'db_table_events_logs' => 'events_logs'
+
 );
