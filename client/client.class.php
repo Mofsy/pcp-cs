@@ -80,7 +80,7 @@ class Protect
      *
      * @var boolean
      */
-    private $use_localhost = false;
+    public $use_localhost = false;
 
     /**
      * Разрешить использовать текущую версию скрипта после истечении срока лицензии
@@ -90,7 +90,7 @@ class Protect
      *
      * @var boolean
      */
-    private $use_expires = true;
+    public $use_expires = true;
 
     /**
      * Маркер режима хранения ключа
