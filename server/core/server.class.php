@@ -529,7 +529,7 @@ class Protect
      */
     public function licenseKeyActivate($client_data)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . "s SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
+        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
 
         return $this->licenseKeyGet($client_data['key']);
     }
