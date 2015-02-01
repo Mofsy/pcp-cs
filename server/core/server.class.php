@@ -61,16 +61,34 @@ class Protect
         /*
          * Префикс таблиц
          */
-        $this->db_prefix = $config['db_prefix'];
+        if(isset($config['db_prefix']))
+        {
+            $this->db_prefix = $config['db_prefix'];
+        }
 
         /*
          * Название таблиц
          */
-        $this->db_table_users = $config['db_table_users'];
-        $this->db_table_logs = $config['db_table_logs'];
-        $this->db_table_keys = $config['db_table_keys'];
-        $this->db_table_methods = $config['db_table_methods'];
-        $this->db_table_events_logs = $config['db_table_events_logs'];
+        if(isset($config['db_table_users']))
+        {
+            $this->db_table_users = $config['db_table_users'];
+        }
+        if(isset($config['db_table_logs']))
+        {
+            $this->db_table_logs = $config['db_table_logs'];
+        }
+        if(isset($config['db_table_keys']))
+        {
+            $this->db_table_keys = $config['db_table_keys'];
+        }
+        if(isset($config['db_table_methods']))
+        {
+            $this->db_table_methods = $config['db_table_methods'];
+        }
+        if(isset($config['db_table_events_logs']))
+        {
+            $this->db_table_events_logs = $config['db_table_events_logs'];
+        }
 
         /*
          * Создаем объект подключения к базе данных
