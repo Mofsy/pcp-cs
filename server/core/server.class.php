@@ -97,7 +97,7 @@ class Protect
     }
 
     /**
-     * Деструктор класа
+     * Деструктор класса
      */
     public function __destruct()
     {
@@ -110,7 +110,8 @@ class Protect
     {
         // TODO: Сделать занесение всех обращений в таблицу логов базы данных
 
-        if ($client_data = $this->clientDataGet()) {
+        if ($client_data = $this->clientDataGet())
+        {
             /*
              * Запрашиваем все данные о лицензионном ключе из базы данных по ключу клиента
              */
@@ -119,7 +120,8 @@ class Protect
                 /*
                  * Если лицензионный ключ не активирован или переиздан, обновляем данные клиента (домен, ip, hostname, mac)
                  */
-                if ($key_data['status'] == 0 || $key_data['status'] == 3) {
+                if ($key_data['status'] === 0 || $key_data['status'] === 3)
+                {
                     $key_data = $this->licenseKeyActivate($client_data);
                 }
 
@@ -150,7 +152,9 @@ class Protect
             }
 
             die('Invalid');
-        } else {
+        }
+        else
+        {
             die('Invalid');
         }
     }
@@ -163,7 +167,6 @@ class Protect
      *
      * @return string
      */
-
     public function localKeyCreate($key_data, $method_data)
     {
         /**
@@ -289,9 +292,13 @@ class Protect
     {
         $key = md5(time());
         $new_key = '';
-        for ($i = 1; $i <= 25; $i++) {
+        for ($i = 1; $i <= 25; $i++)
+        {
             $new_key .= $key[$i];
-            if ($i % 5 == 0 && $i != 25) $new_key .= '-';
+            if ($i % 5 === 0 && $i !== 25)
+            {
+	            $new_key .= '-';
+            }
         }
 
         return strtoupper($new_key);
@@ -537,14 +544,19 @@ class Protect
 
             return $key_data;
         }
+
         $this->db->free($result);
 
         return false;
     }
 
-    /**
-     * Активация лицензионного ключа
-     */
+	/**
+	 * Активация лицензионного ключа
+	 *
+	 * @param array $client_data Данные полученние от клиента
+	 *
+	 * @return array|boolean
+	 */
     public function licenseKeyActivate($client_data)
     {
         $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_domain='{$client_data['domain']}', l_ip='{$client_data['ip']}', l_directory='{$client_data['directory']}', l_server_hostname='{$client_data['server_hostname']}', l_server_ip = '{$client_data['server_ip']}', l_status='1' WHERE l_key='{$client_data['key']}'");
@@ -554,10 +566,19 @@ class Protect
 
     /**
      * Сброс активационных данных у ключа активации по ключу активации
+     *
+     * @param string $license_key Сбрасываемый ключ активации
+     *
+     * @return boolean
      */
     public function licenseKeyTruncateByKey($license_key)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'");
+        if($this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_domain='', l_ip='', l_directory='', l_server_hostname='', l_server_ip = '', l_status='3' WHERE l_key='{$license_key}'"))
+        {
+	        return true;
+        }
+
+	    return false;
     }
 
     /**
@@ -576,19 +597,16 @@ class Protect
      */
     public function licenseKeyStatusUpdateByKey($license_key, $status)
     {
-        $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_status='$status' WHERE l_key='$license_key'");
-        
-        if ($status == 3) {
+        if ($status === 3)
+        {
             $this->licenseKeyTruncateByKey($license_key);
         }
+	    else
+	    {
+		    $this->db->query("UPDATE " . $this->db_prefix . "_" . $this->db_table_keys . " SET l_status='$status' WHERE l_key='$license_key'");
+	    }
 
-        $return_status = $this->db->super_query("SELECT l_status FROM " . $this->db_prefix . "_" . $this->db_table_keys . " WHERE l_key='{$license_key}'");
-
-        if ($return_status['l_status'] == $status) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -601,18 +619,19 @@ class Protect
         /**
          * Проверяем наличие пост запроса от клиента
          */
-        if (isset($_POST['activation_key'])) {
+        if(isset($_POST['activation_key']))
+        {
             $client_data = array();
 
             /**
              * Лицензионный ключ активации
              */
-            $client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['activation_key'])))));
+            $client_data['key'] = $this->db->filter(htmlspecialchars(trim(strip_tags((string)$_POST['activation_key']))));
 
             /**
              * Домен на котором установлен клиент (без www)
              */
-            $client_data['domain'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['domain'])))));
+            $client_data['domain'] = $this->db->filter(htmlspecialchars(trim(strip_tags((string)$_POST['domain']))));
             $client_data['domain'] = str_replace("www.", "", $client_data['domain']);
 
             /**
@@ -623,12 +642,12 @@ class Protect
             /**
              * Директория от root где установлен клиент
              */
-            $client_data['directory'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['directory'])))));
+            $client_data['directory'] = $this->db->filter(htmlspecialchars(trim(strip_tags((string)$_POST['directory']))));
 
             /**
              * Имя хоста где установлен лиент
              */
-            $client_data['server_hostname'] = $this->db->filter(htmlspecialchars(trim(strip_tags(strval($_POST['server_hostname'])))));
+            $client_data['server_hostname'] = $this->db->filter(htmlspecialchars(trim(strip_tags((string)$_POST['server_hostname']))));
 
             /**
              * Айпи адрес сервера где установлен клиент
@@ -674,7 +693,7 @@ class Protect
                 'started' => date( 'd/m/Y - H:i', $row['l_started'] ),
                 'expires' => $row['l_expires'],
                 'status' => $row['l_status'],
-                'key' => $row['l_key'],
+                'key' => $row['l_key']
             );
         }
 
@@ -684,7 +703,7 @@ class Protect
     }
 
     /*
-     * Получение всех ключей активации
+     * Получение всех методов для ключей активации
      */
     public function getMethodAll()
     {
@@ -694,18 +713,15 @@ class Protect
 
         while ($row = $this->db->get_array($result) )
         {
-            if(is_numeric($row['l_expires'])){
-                $row['l_expires'] = date( 'd/m/Y - H:i', $row['l_expires'] );
-            }
             $result_array[] = array(
                 'id' => $row['id'],
-                'domain' => $row['l_domain'],
-                'started' => date( 'd/m/Y - H:i', $row['l_started'] ),
-                'expires' => $row['l_expires'],
-                'status' => $row['l_status'],
-                'key' => $row['l_key'],
+                'name' => $row['name'],
+                'secret_key' => $row['secret_key'],
+                'check_period' => $row['check_period'],
+                'enforce' => $row['enforce']
             );
         }
+
         $this->db->free($result);
 
         return $result_array;
@@ -713,12 +729,14 @@ class Protect
     
     /**
      * Добавление события в лог
+     *
      * @param string $event_name Имя события
      * @param array  $event_data Массив с даными о событии 
      */
     public function addToLog($event_name, $event_data = array()) 
     {
         $data = json_encode($event_data);
+
         $this->db->query("INSERT INTO " . $this->db_prefix . "_" . $this->db_table_events_logs . " SET `name` = '{$event_name}', `event_data` = '{$data}'");
     }
 }
