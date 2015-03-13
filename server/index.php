@@ -28,9 +28,9 @@ require_once(dirname(__FILE__) . '/vendor/twig/Autoloader.php');
  * Шаблонизатор
  */
 Twig_Autoloader::register(true);
-$loader = new Twig_Loader_Filesystem(dirname(__FILE__) . '/template');
+$loader = new Twig_Loader_Filesystem(__DIR__ . '/template');
 $twig = new Twig_Environment($loader, array(
-    'cache' => dirname(__FILE__) . '/cache',
+    'cache' => __DIR__ . '/cache',
     'auto_reload' => true
 ));
 
@@ -65,19 +65,20 @@ if($auth->user_logged)
 
     $data['title'] = 'Control panel';
     $data['user_name'] = $auth->user_name;
+	$module = 'main';
 
     if(isset($_GET['mod']))
+    {
         $module = $_GET['mod'];
-    else
-        $module = 'main';
+	}
 
     $data['module'] = $module;
 
-    if($module == 'keys')
+    if($module === 'keys')
     {
         $data['keys'] = $server->getActivationKeys();
     }
-    if($module == 'logs')
+    if($module === 'logs')
     {
         $data['logs'] = '';
     }
