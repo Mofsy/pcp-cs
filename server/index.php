@@ -49,10 +49,10 @@ $data = array();
 $data['home_url'] = $config['home_url'];
 $data['user_ip'] = $auth->user_ip;
 
-if( isset( $_REQUEST['action'] ) and $_REQUEST['action'] == "logout" )
+if( isset( $_REQUEST['action'] ) and $_REQUEST['action'] === 'logout' )
 {
     $auth->logout();
-    header( "Location: " . $config['home_url'] . "/index.php");
+    header( 'Location: ' . $config['home_url'] . '/index.php');
     die();
 }
 if(isset($_POST['name']) && isset($_POST['password']))

@@ -15,9 +15,9 @@
 /*
  * Компоненты
  */
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
+include_once(__DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
+include_once(__DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
+include_once(__DIR__ . DIRECTORY_SEPARATOR . 'config.php');
 
 /*
  * Создаем экземпляр класса сервера

@@ -8,7 +8,7 @@
  */
 
 $time_start = microtime(true);
-include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'client.class.php');
+include_once(__DIR__ . DIRECTORY_SEPARATOR . 'client.class.php');
 
 /**
  * Создаем экземпляр класса
