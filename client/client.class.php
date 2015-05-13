@@ -539,7 +539,7 @@ class Protect
         /*
          * Присваиваем срок окончания лицензии свойству класса
          */
-        if ((string)$key_data['activation_key_expires'] == 'never') {
+        if ((string)$key_data['activation_key_expires'] === 'never') {
             $this->activation_key_expires = 0;
         } else {
             $this->activation_key_expires = (integer)$key_data['activation_key_expires'];
@@ -548,14 +548,14 @@ class Protect
         /*
          * Проверяем лицензионный ключ на принадлежность к полученному лицензионному ключу.
          */
-        if ((string)$key_data['activation_key'] != (string)$this->activation_key) {
+        if ((string)$key_data['activation_key'] !== (string)$this->activation_key) {
             return $this->errors = $this->status_messages['activation_key_string_mismatch'];
         }
 
         /*
          * Проверяем статус лицензии, если она не активна и срок не истек, то возвращаем ошибку
          */
-        if ((integer)$key_data['status'] != 1 && (integer)$key_data['status'] != 2) {
+        if ((integer)$key_data['status'] !== 1 && (integer)$key_data['status'] !== 2) {
             return $this->errors = $this->status_messages['status_' . $key_data['status']];
         }
 
@@ -564,7 +564,7 @@ class Protect
          *
          * NOTE: если срок ключа активации истек и стоит запрет на использование после истечение срока, выдаем ошибку.
          */
-        if ($this->use_expires == false && (string)$key_data['activation_key_expires'] != 'never' && (integer)$key_data['activation_key_expires'] < time()) {
+        if ($this->use_expires === false && (string)$key_data['activation_key_expires'] !== 'never' && (integer)$key_data['activation_key_expires'] < time()) {
             return $this->errors = $this->status_messages['status_2'];
         }
 
@@ -572,7 +572,8 @@ class Protect
          * Проверяем срок истечения локального ключа, если он истек и стоит запрет на использование после истечения
          * срока лицензионного ключа, очищаем ключ и пытаемся получить новый.
          */
-        if ($this->use_expires == false && (string)$key_data['local_key_expires'] != 'never' && (integer)$key_data['local_key_expires'] < time()) {
+        if ($this->use_expires === false && (string)$key_data['local_key_expires'] !== 'never' && (integer)$key_data['local_key_expires'] < time()) {
+
             /*
              * Если имеется доступный льготный период
              */
@@ -595,8 +596,8 @@ class Protect
          * истечения срока лицензионного ключа активации. Дата истечения должна быть меньше даты релиза.
          * Негоже использовать новый скрипт со старой лицензией.
          */
-        if ($this->use_expires == true
-            && (string)$key_data['activation_key_expires'] != 'never'
+        if ($this->use_expires === true
+            && (string)$key_data['activation_key_expires'] !== 'never'
             && (integer)$key_data['activation_key_expires'] < strtotime($this->release_date)) {
             return $this->errors = $this->status_messages['download_access_expired'];
         }
@@ -605,8 +606,8 @@ class Protect
          * Проверяем срок истечения локального ключа, если он истек и есть разрешение на использование
          * после истечения срока лицензионного ключа.
          */
-        if ($this->use_expires == true
-            && (string)$key_data['local_key_expires'] != 'never'
+        if ($this->use_expires === true
+            && (string)$key_data['local_key_expires'] !== 'never'
             && (integer)$key_data['local_key_expires'] < time()
             && (integer)$key_data['activation_key_expires'] > (integer)$key_data['local_key_expires'] + 604800) {
             /*
@@ -684,7 +685,7 @@ class Protect
          * Если конфликты для локального ключа остались, выдаем ошибку.
          * Скрипт не имеет права выполняться в данном расположении по указанной лицензии.
          */
-        if (!empty($conflicts)) {
+        if (count($conflicts) !== 0) {
             return $this->errors = $this->status_messages['local_key_invalid_for_location'];
         }
 
@@ -751,7 +752,7 @@ class Protect
      */
     public function clearLocalKey()
     {
-        if ($this->local_key_storage == 'filesystem') {
+        if ($this->local_key_storage === 'filesystem') {
             $this->writeLocalKey('', "{$this->local_key_path}{$this->local_key_name}");
         } else {
             $this->errors = $this->status_messages['invalid_local_key_storage'];
@@ -812,21 +813,21 @@ class Protect
             $use = substr($priority, 0, 1);
 
             // если использовать fsockopen()
-            if ($use == 's') {
+            if ($use === 's') {
                 if ($result = $this->useFsockopen($this->server, $query_string)) {
                     break;
                 }
             }
 
             // если использовать curl()
-            if ($use == 'c') {
+            if ($use === 'c') {
                 if ($result = $this->useCurl($this->server, $query_string)) {
                     break;
                 }
             }
 
             // если использовать fopen()
-            if ($use == 'f') {
+            if ($use === 'f') {
                 if ($result = $this->useFopen($this->server, $query_string)) {
                     break;
                 }
@@ -849,7 +850,7 @@ class Protect
          * Если результат запроса вернул ошибку ключа
          * То выдаем ошибку + можно заменить Error на ошибку с сервера.
          */
-        if (substr($result, 0, 7) == 'Invalid') {
+        if (substr($result, 0, 7) === 'Invalid') {
             $this->errors = str_replace('Invalid', 'Error', $result);
 
             return false;
@@ -858,7 +859,7 @@ class Protect
         /*
          * Если результат запроса вернул ошибку (например сервер недоступен)
          */
-        if (substr($result, 0, 5) == 'Error') {
+        if (substr($result, 0, 5) === 'Error') {
             $this->errors = $result;
 
             return false;
@@ -968,12 +969,12 @@ class Protect
         $all = explode("\n", $all[1]);
         $all = trim($all[0]);
 
-        if ($target == 'System') {
+        if ($target === 'System') {
             $all = explode(" ", $all);
-            $all = trim($all[(strtolower($all[0]) == 'windows' && strtolower($all[1]) == 'nt') ? 2 : 1]);
+            $all = trim($all[(strtolower($all[0]) === 'windows' && strtolower($all[1]) === 'nt') ? 2 : 1]);
         }
 
-        if ($target == 'SCRIPT_FILENAME') {
+        if ($target === 'SCRIPT_FILENAME') {
             $slash = ($this->isWindows() ? '\\' : '/');
 
             $all = explode($slash, $all);
@@ -981,7 +982,7 @@ class Protect
             $all = implode($slash, $all);
         }
 
-        if (substr($all, 1, 1) == ']') {
+        if (substr($all, 1, 1) === ']') {
             return false;
         }
 
@@ -1120,7 +1121,7 @@ class Protect
      */
     private function isWindows()
     {
-        return (strtolower(substr(php_uname(), 0, 7)) == 'windows');
+        return (strtolower(substr(php_uname(), 0, 7)) === 'windows');
     }
 
     /**
@@ -1145,7 +1146,7 @@ class Protect
         // На всякий случай собираем еще данные
         $local_ip = ($local_ip) ? $local_ip : $this->serverAddr();
 
-        if ($local_ip == '127.0.0.1')
+        if ($local_ip === '127.0.0.1')
             return true;
 
         return false;
