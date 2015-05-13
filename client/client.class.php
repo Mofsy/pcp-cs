@@ -467,15 +467,21 @@ class Protect
      */
     private function extractAccessSet($instances, $enforce)
     {
-        foreach ($instances as $key => $instance) {
-            if ($key != $enforce) {
+	    $return = array();
+
+        foreach($instances as $key => $instance)
+        {
+            if ($key !== $enforce)
+            {
                 continue;
             }
-
-            return $instance;
+	        else
+	        {
+		        $return = $instance;
+	        }
         }
 
-        return array();
+        return $return;
     }
 
     /**
