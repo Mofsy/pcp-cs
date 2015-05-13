@@ -290,7 +290,7 @@ class Protect
      */
     public function licenseKeyGen()
     {
-        $key = md5(time());
+        $key = md5(time().mt_rand(1,5));
         $new_key = '';
         for ($i = 1; $i <= 25; $i++)
         {
