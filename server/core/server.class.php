@@ -367,9 +367,14 @@ class Protect
     /**
      * Добавление нового метода проверки ключа активации
      *
+     * @param $name string Название нового метода
+     * @param $secret_key string Секретный ключ метода
+     * @param $check_period integer Период проверки ключа в днях
+     * @param $enforce string Маркер на проверку локального ключа.
+     *
      * @return array|boolean Информация о вновь созданном методе при успехе; false при ошибке;
      */
-    public function licenseKeyMethodCreate($name, $secret_key, $check_period, $enforce)
+    public function licenseKeyMethodCreate($name, $secret_key, $check_period = 1, $enforce = 'domain')
     {
         $new_method_data = array();
 
@@ -733,7 +738,7 @@ class Protect
      * @param string $event_name Имя события
      * @param array  $event_data Массив с даными о событии 
      */
-    public function addToLog($event_name, $event_data = array()) 
+    public function addToLog($event_name, $event_data)
     {
         $data = json_encode($event_data);
 
