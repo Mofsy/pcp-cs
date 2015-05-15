@@ -120,7 +120,7 @@ class Protect
                 /*
                  * Если лицензионный ключ не активирован или переиздан, обновляем данные клиента (домен, ip, hostname, mac)
                  */
-                if ($key_data['status'] === 0 || $key_data['status'] === 3)
+                if ($key_data['status'] == 0 || $key_data['status'] == 3)
                 {
                     $key_data = $this->licenseKeyActivate($client_data);
                 }
@@ -179,13 +179,13 @@ class Protect
         $instance['domain'][] =  $key_data['domain'];
         $instance['domain'][] =  'www.' . $key_data['domain'];
         if(isset($key_data['domain_wildcard'])){
-            if($key_data['domain_wildcard'] === 1){
+            if($key_data['domain_wildcard'] == 1){
                 $instance['domain'][] = '*.' . $key_data['domain'];
             }
-            elseif($key_data['domain_wildcard'] === 2){
+            elseif($key_data['domain_wildcard'] == 2){
                 $instance['domain'][] = '*.' . $key_data['domain'] . '.*';
             }
-            elseif($key_data['domain_wildcard'] === 3){
+            elseif($key_data['domain_wildcard'] == 3){
                 $instance['domain'][] = $key_data['domain'] . '.*';
             }
         }
