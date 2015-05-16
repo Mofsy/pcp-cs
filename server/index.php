@@ -18,11 +18,11 @@ $time_start = microtime(true);
 /*
  * Компоненты
  */
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'auth.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'config.php');
-require_once(dirname(__FILE__) . '/vendor/twig/Autoloader.php');
+require_once(__DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'server.class.php');
+require_once(__DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'mysqli.class.php');
+require_once(__DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'auth.class.php');
+require_once(__DIR__ . DIRECTORY_SEPARATOR . 'config.php');
+require_once(__DIR__ . '/vendor/twig/Autoloader.php');
 
 /*
  * Шаблонизатор

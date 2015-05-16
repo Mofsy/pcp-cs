@@ -449,7 +449,6 @@ class Protect
      */
     public function licenseKeyGet($key)
     {
-
         $result = $this->db->query("SELECT * FROM " . $this->db_prefix . "_" . $this->db_table_keys . " WHERE l_key='$key' LIMIT 0,1");
         $row = $this->db->get_row($result);
 
