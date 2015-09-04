@@ -2,9 +2,10 @@
 /**
  * PHP code protect
  *
- * @link          https://github.com/Mofsy/pcp-cs
- * @author        Oleg Budrin <ru.mofsy@yandex.ru>
- * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ * @link            https://github.com/Mofsy/pcp-cs
+ * @author          Oleg Budrin <ru.mofsy@yandex.ru>
+ * @author_link    https://mofsy.ru
+ * @copyright      Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 
 namespace Mofsy\License\Server\Core;
@@ -405,6 +406,30 @@ class Protect
 
         return $new_method_data;
     }
+
+	/**
+	 * Получение статистической информации
+	 *
+	 * @return array
+	 */
+	public function getStats()
+	{
+		$data = array();
+
+		$row = $this->db->super_query( "SELECT COUNT(*) as count FROM " . $this->db_prefix . "_" . $this->db_table_keys );
+		$data['pcp_keys'] = $row['count'];
+
+		$row = $this->db->super_query( "SELECT COUNT(*) as count FROM " . $this->db_prefix . "_" . $this->db_table_methods );
+		$data['pcp_methods'] = $row['count'];
+
+		$row = $this->db->super_query( "SELECT COUNT(*) as count FROM " . $this->db_prefix . "_" . $this->db_table_users );
+		$data['pcp_users'] = $row['count'];
+
+		$row = $this->db->super_query( "SELECT COUNT(*) as count FROM " . $this->db_prefix . "_" . $this->db_table_events_logs);
+		$data['pcp_logs'] = $row['count'];
+
+		return $data;
+	}
 
     /**
      * Получение информации о методе проверки лицензионного ключа по id

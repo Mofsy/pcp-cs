@@ -2,9 +2,10 @@
 /**
  * PHP code protect
  *
- * @link          https://github.com/Mofsy/pcp-cs
- * @author        Oleg Budrin <ru.mofsy@yandex.ru>
- * @copyright     Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
+ * @link            https://github.com/Mofsy/pcp-cs
+ * @author          Oleg Budrin <ru.mofsy@yandex.ru>
+ * @author_link    https://mofsy.ru
+ * @copyright      Copyright (c) 2013-2015, Oleg Budrin (Mofsy)
  */
 $time_start = microtime(true);
 
@@ -82,6 +83,10 @@ if($auth->user_logged)
     {
         $data['logs'] = '';
     }
+	if($module === 'main')
+	{
+		$data['stats'] = $server->getStats();
+	}
 
     echo $twig->render('index.html', $data);
 
